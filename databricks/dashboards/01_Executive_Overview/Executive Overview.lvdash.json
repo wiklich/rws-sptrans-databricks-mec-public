@@ -1,0 +1,1054 @@
+{
+  "datasets": [
+    {
+      "name": "a1b2c3d4",
+      "displayName": "executive_summary",
+      "queryLines": [
+        "WITH base AS (\r\n",
+        "  SELECT\r\n",
+        "    service_date,\r\n",
+        "    line_sign,\r\n",
+        "    gtfs_direction_id,\r\n",
+        "    planned_service_present_flag,\r\n",
+        "    observed_service_present_flag,\r\n",
+        "    missed_service_flag,\r\n",
+        "    planned_headway_minutes,\r\n",
+        "    observed_headway_avg_minutes,\r\n",
+        "    headway_deviation_minutes,\r\n",
+        "    headway_deviation_pct\r\n",
+        "  FROM main.gold.gold_planned_vs_observed_service_adherence_hourly\r\n",
+        "  WHERE (\r\n",
+        "      :p_service_date_range.min IS NULL\r\n",
+        "      OR :p_service_date_range.max IS NULL\r\n",
+        "      OR service_date BETWEEN CAST(:p_service_date_range.min AS DATE)\r\n",
+        "                          AND CAST(:p_service_date_range.max AS DATE)\r\n",
+        "    )\r\n",
+        "    AND (\r\n",
+        "      :p_gtfs_direction_id = 'ALL'\r\n",
+        "      OR CAST(gtfs_direction_id AS STRING) = :p_gtfs_direction_id\r\n",
+        "    )\r\n",
+        ")\r\n",
+        "SELECT\r\n",
+        "  MAX(service_date) AS latest_service_date,\r\n",
+        "  SUM(CASE WHEN planned_service_present_flag THEN 1 ELSE 0 END) AS planned_service_hours,\r\n",
+        "  SUM(CASE WHEN observed_service_present_flag THEN 1 ELSE 0 END) AS observed_service_hours,\r\n",
+        "  SUM(CASE WHEN missed_service_flag THEN 1 ELSE 0 END) AS missed_service_windows,\r\n",
+        "  CASE\r\n",
+        "    WHEN SUM(CASE WHEN planned_service_present_flag THEN 1 ELSE 0 END) = 0 THEN NULL\r\n",
+        "    ELSE SUM(CASE WHEN missed_service_flag THEN 1 ELSE 0 END) * 1.0\r\n",
+        "         / SUM(CASE WHEN planned_service_present_flag THEN 1 ELSE 0 END)\r\n",
+        "  END AS missed_service_rate,\r\n",
+        "  AVG(headway_deviation_minutes) AS avg_headway_deviation_minutes,\r\n",
+        "  AVG(headway_deviation_pct) AS avg_headway_deviation_pct\r\n",
+        "FROM base"
+      ],
+      "parameters": [
+        {
+          "displayName": "Service Date Range",
+          "keyword": "p_service_date_range",
+          "dataType": "DATE",
+          "complexType": "RANGE",
+          "defaultSelection": {
+            "range": {
+              "dataType": "DATE",
+              "min": {
+                "value": "2026-03-18T00:00:00.000"
+              },
+              "max": {
+                "value": "2026-03-18T00:00:00.000"
+              }
+            }
+          }
+        },
+        {
+          "displayName": "GTFS Direction",
+          "keyword": "p_gtfs_direction_id",
+          "dataType": "STRING",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": [
+                {
+                  "value": "ALL"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "b2c3d4e5",
+      "displayName": "daily_trends",
+      "queryLines": [
+        "SELECT\r\n",
+        "  service_date,\r\n",
+        "  SUM(CASE WHEN planned_service_present_flag THEN 1 ELSE 0 END) AS planned_service_hours,\r\n",
+        "  SUM(CASE WHEN observed_service_present_flag THEN 1 ELSE 0 END) AS observed_service_hours,\r\n",
+        "  SUM(CASE WHEN missed_service_flag THEN 1 ELSE 0 END) AS missed_service_windows,\r\n",
+        "  CASE\r\n",
+        "    WHEN SUM(CASE WHEN planned_service_present_flag THEN 1 ELSE 0 END) = 0 THEN NULL\r\n",
+        "    ELSE SUM(CASE WHEN missed_service_flag THEN 1 ELSE 0 END) * 1.0\r\n",
+        "         / SUM(CASE WHEN planned_service_present_flag THEN 1 ELSE 0 END)\r\n",
+        "  END AS missed_service_rate,\r\n",
+        "  AVG(headway_deviation_minutes) AS avg_headway_deviation_minutes\r\n",
+        "FROM main.gold.gold_planned_vs_observed_service_adherence_hourly\r\n",
+        "WHERE (\r\n",
+        "    :p_service_date_range.min IS NULL\r\n",
+        "    OR :p_service_date_range.max IS NULL\r\n",
+        "    OR service_date BETWEEN CAST(:p_service_date_range.min AS DATE)\r\n",
+        "                        AND CAST(:p_service_date_range.max AS DATE)\r\n",
+        "  )\r\n",
+        "  AND (\r\n",
+        "    :p_gtfs_direction_id = 'ALL'\r\n",
+        "    OR CAST(gtfs_direction_id AS STRING) = :p_gtfs_direction_id\r\n",
+        "  )\r\n",
+        "GROUP BY service_date\r\n",
+        "ORDER BY service_date"
+      ],
+      "parameters": [
+        {
+          "displayName": "Service Date Range",
+          "keyword": "p_service_date_range",
+          "dataType": "DATE",
+          "complexType": "RANGE",
+          "defaultSelection": {
+            "range": {
+              "dataType": "DATE",
+              "min": {
+                "value": "2026-03-18T00:00:00.000"
+              },
+              "max": {
+                "value": "2026-03-18T00:00:00.000"
+              }
+            }
+          }
+        },
+        {
+          "displayName": "GTFS Direction",
+          "keyword": "p_gtfs_direction_id",
+          "dataType": "STRING",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": [
+                {
+                  "value": "ALL"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "c3d4e5f6",
+      "displayName": "top_lines_missed_service",
+      "queryLines": [
+        "SELECT\r\n",
+        "  line_sign,\r\n",
+        "  SUM(CASE WHEN planned_service_present_flag THEN 1 ELSE 0 END) AS planned_service_hours,\r\n",
+        "  SUM(CASE WHEN missed_service_flag THEN 1 ELSE 0 END) AS missed_service_windows,\r\n",
+        "  CASE\r\n",
+        "    WHEN SUM(CASE WHEN planned_service_present_flag THEN 1 ELSE 0 END) = 0 THEN NULL\r\n",
+        "    ELSE SUM(CASE WHEN missed_service_flag THEN 1 ELSE 0 END) * 1.0\r\n",
+        "         / SUM(CASE WHEN planned_service_present_flag THEN 1 ELSE 0 END)\r\n",
+        "  END AS missed_service_rate\r\n",
+        "FROM main.gold.gold_planned_vs_observed_service_adherence_hourly\r\n",
+        "WHERE (\r\n",
+        "    :p_service_date_range.min IS NULL\r\n",
+        "    OR :p_service_date_range.max IS NULL\r\n",
+        "    OR service_date BETWEEN CAST(:p_service_date_range.min AS DATE)\r\n",
+        "                        AND CAST(:p_service_date_range.max AS DATE)\r\n",
+        "  )\r\n",
+        "  AND (\r\n",
+        "    :p_gtfs_direction_id = 'ALL'\r\n",
+        "    OR CAST(gtfs_direction_id AS STRING) = :p_gtfs_direction_id\r\n",
+        "  )\r\n",
+        "GROUP BY line_sign\r\n",
+        "HAVING SUM(CASE WHEN planned_service_present_flag THEN 1 ELSE 0 END) > 0\r\n",
+        "ORDER BY missed_service_rate DESC, missed_service_windows DESC, line_sign ASC\r\n",
+        "LIMIT 15"
+      ],
+      "parameters": [
+        {
+          "displayName": "Service Date Range",
+          "keyword": "p_service_date_range",
+          "dataType": "DATE",
+          "complexType": "RANGE",
+          "defaultSelection": {
+            "range": {
+              "dataType": "DATE",
+              "min": {
+                "value": "2026-03-18T00:00:00.000"
+              },
+              "max": {
+                "value": "2026-03-18T00:00:00.000"
+              }
+            }
+          }
+        },
+        {
+          "displayName": "GTFS Direction",
+          "keyword": "p_gtfs_direction_id",
+          "dataType": "STRING",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": [
+                {
+                  "value": "ALL"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "d4e5f607",
+      "displayName": "top_lines_headway_deviation",
+      "queryLines": [
+        "SELECT\r\n",
+        "  line_sign,\r\n",
+        "  AVG(CASE WHEN headway_deviation_minutes > 0 THEN headway_deviation_minutes END) AS avg_positive_headway_deviation_minutes,\r\n",
+        "  AVG(headway_deviation_minutes) AS avg_headway_deviation_minutes,\r\n",
+        "  AVG(headway_deviation_pct) AS avg_headway_deviation_pct\r\n",
+        "FROM main.gold.gold_planned_vs_observed_service_adherence_hourly\r\n",
+        "WHERE (\r\n",
+        "    :p_service_date_range.min IS NULL\r\n",
+        "    OR :p_service_date_range.max IS NULL\r\n",
+        "    OR service_date BETWEEN CAST(:p_service_date_range.min AS DATE)\r\n",
+        "                        AND CAST(:p_service_date_range.max AS DATE)\r\n",
+        "  )\r\n",
+        "  AND (\r\n",
+        "    :p_gtfs_direction_id = 'ALL'\r\n",
+        "    OR CAST(gtfs_direction_id AS STRING) = :p_gtfs_direction_id\r\n",
+        "  )\r\n",
+        "GROUP BY line_sign\r\n",
+        "HAVING AVG(CASE WHEN headway_deviation_minutes > 0 THEN headway_deviation_minutes END) IS NOT NULL\r\n",
+        "ORDER BY avg_positive_headway_deviation_minutes DESC, line_sign ASC\r\n",
+        "LIMIT 15"
+      ],
+      "parameters": [
+        {
+          "displayName": "Service Date Range",
+          "keyword": "p_service_date_range",
+          "dataType": "DATE",
+          "complexType": "RANGE",
+          "defaultSelection": {
+            "range": {
+              "dataType": "DATE",
+              "min": {
+                "value": "2026-03-18T00:00:00.000"
+              },
+              "max": {
+                "value": "2026-03-18T00:00:00.000"
+              }
+            }
+          }
+        },
+        {
+          "displayName": "GTFS Direction",
+          "keyword": "p_gtfs_direction_id",
+          "dataType": "STRING",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": [
+                {
+                  "value": "ALL"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "e5f60718",
+      "displayName": "direction_options",
+      "queryLines": [
+        "SELECT\r\n",
+        "  gtfs_direction_id\r\n",
+        "FROM (\r\n",
+        "  SELECT 'ALL' AS gtfs_direction_id, 0 AS sort_order\r\n",
+        "  UNION ALL\r\n",
+        "  SELECT DISTINCT CAST(gtfs_direction_id AS STRING) AS gtfs_direction_id, 1 AS sort_order\r\n",
+        "  FROM main.gold.gold_planned_vs_observed_service_adherence_hourly\r\n",
+        "  WHERE gtfs_direction_id IS NOT NULL\r\n",
+        ") options\r\n",
+        "ORDER BY sort_order, gtfs_direction_id"
+      ]
+    }
+  ],
+  "pages": [
+    {
+      "name": "f6071829",
+      "displayName": "Executive Overview",
+      "layout": [
+        {
+          "widget": {
+            "name": "planned-service-hours",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "a1b2c3d4",
+                  "fields": [
+                    {
+                      "name": "latest_service_date",
+                      "expression": "`latest_service_date`"
+                    },
+                    {
+                      "name": "planned_service_hours",
+                      "expression": "`planned_service_hours`"
+                    }
+                  ],
+                  "disaggregated": true,
+                  "orders": [
+                    {
+                      "direction": "DESC",
+                      "expression": "`latest_service_date`"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Planned Service Hours",
+                "headerAlignment": "center"
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "planned_service_hours"
+                },
+                "period": {
+                  "fieldName": "latest_service_date"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 2,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "observed-service-hours",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "a1b2c3d4",
+                  "fields": [
+                    {
+                      "name": "latest_service_date",
+                      "expression": "`latest_service_date`"
+                    },
+                    {
+                      "name": "observed_service_hours",
+                      "expression": "`observed_service_hours`"
+                    }
+                  ],
+                  "disaggregated": true,
+                  "orders": [
+                    {
+                      "direction": "DESC",
+                      "expression": "`latest_service_date`"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Observed Service Hours",
+                "headerAlignment": "center"
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "observed_service_hours"
+                },
+                "period": {
+                  "fieldName": "latest_service_date"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 2,
+            "y": 0,
+            "width": 2,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "missed-service-windows",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "a1b2c3d4",
+                  "fields": [
+                    {
+                      "name": "latest_service_date",
+                      "expression": "`latest_service_date`"
+                    },
+                    {
+                      "name": "missed_service_windows",
+                      "expression": "`missed_service_windows`"
+                    }
+                  ],
+                  "disaggregated": true,
+                  "orders": [
+                    {
+                      "direction": "DESC",
+                      "expression": "`latest_service_date`"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Missed Service Windows",
+                "headerAlignment": "center"
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "missed_service_windows"
+                },
+                "period": {
+                  "fieldName": "latest_service_date"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 4,
+            "y": 0,
+            "width": 2,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "missed-service-rate",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "a1b2c3d4",
+                  "fields": [
+                    {
+                      "name": "latest_service_date",
+                      "expression": "`latest_service_date`"
+                    },
+                    {
+                      "name": "missed_service_rate",
+                      "expression": "`missed_service_rate`"
+                    }
+                  ],
+                  "disaggregated": true,
+                  "orders": [
+                    {
+                      "direction": "DESC",
+                      "expression": "`latest_service_date`"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Missed Service Rate",
+                "headerAlignment": "center"
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "missed_service_rate"
+                },
+                "period": {
+                  "fieldName": "latest_service_date"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 0,
+            "width": 2,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "avg-headway-deviation-minutes",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "a1b2c3d4",
+                  "fields": [
+                    {
+                      "name": "latest_service_date",
+                      "expression": "`latest_service_date`"
+                    },
+                    {
+                      "name": "avg_headway_deviation_minutes",
+                      "expression": "`avg_headway_deviation_minutes`"
+                    }
+                  ],
+                  "disaggregated": true,
+                  "orders": [
+                    {
+                      "direction": "DESC",
+                      "expression": "`latest_service_date`"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Avg Headway Deviation (Min)",
+                "headerAlignment": "center"
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "avg_headway_deviation_minutes"
+                },
+                "period": {
+                  "fieldName": "latest_service_date"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 8,
+            "y": 0,
+            "width": 2,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "avg-headway-deviation-pct",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "a1b2c3d4",
+                  "fields": [
+                    {
+                      "name": "latest_service_date",
+                      "expression": "`latest_service_date`"
+                    },
+                    {
+                      "name": "avg_headway_deviation_pct",
+                      "expression": "`avg_headway_deviation_pct`"
+                    }
+                  ],
+                  "disaggregated": true,
+                  "orders": [
+                    {
+                      "direction": "DESC",
+                      "expression": "`latest_service_date`"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Avg Headway Deviation (%)",
+                "headerAlignment": "center"
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "avg_headway_deviation_pct"
+                },
+                "period": {
+                  "fieldName": "latest_service_date"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 10,
+            "y": 0,
+            "width": 2,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "daily-missed-service-rate-trend",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "b2c3d4e5",
+                  "fields": [
+                    {
+                      "name": "service_date",
+                      "expression": "`service_date`"
+                    },
+                    {
+                      "name": "missed_service_rate",
+                      "expression": "`missed_service_rate`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Daily Missed Service Rate"
+              },
+              "widgetType": "line",
+              "encodings": {
+                "x": {
+                  "fieldName": "service_date",
+                  "axis": {
+                    "title": "Service Date"
+                  }
+                },
+                "y": {
+                  "fieldName": "missed_service_rate",
+                  "axis": {
+                    "title": "Missed Service Rate"
+                  },
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 2,
+            "width": 6,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "daily-avg-headway-deviation-trend",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "b2c3d4e5",
+                  "fields": [
+                    {
+                      "name": "service_date",
+                      "expression": "`service_date`"
+                    },
+                    {
+                      "name": "avg_headway_deviation_minutes",
+                      "expression": "`avg_headway_deviation_minutes`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Daily Avg Headway Deviation (Min)"
+              },
+              "widgetType": "line",
+              "encodings": {
+                "x": {
+                  "fieldName": "service_date",
+                  "axis": {
+                    "title": "Service Date"
+                  }
+                },
+                "y": {
+                  "fieldName": "avg_headway_deviation_minutes",
+                  "axis": {
+                    "title": "Avg Headway Deviation (Min)"
+                  },
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 2,
+            "width": 6,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "top-lines-missed-service-rate",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "c3d4e5f6",
+                  "fields": [
+                    {
+                      "name": "line_sign",
+                      "expression": "`line_sign`"
+                    },
+                    {
+                      "name": "missed_service_rate",
+                      "expression": "`missed_service_rate`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Top Lines by Missed Service Rate"
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "line_sign",
+                  "axis": {
+                    "title": "Line Sign"
+                  }
+                },
+                "y": {
+                  "fieldName": "missed_service_rate",
+                  "axis": {
+                    "title": "Missed Service Rate"
+                  },
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 8,
+            "width": 6,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "top-lines-headway-deviation",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "d4e5f607",
+                  "fields": [
+                    {
+                      "name": "line_sign",
+                      "expression": "`line_sign`"
+                    },
+                    {
+                      "name": "avg_positive_headway_deviation_minutes",
+                      "expression": "`avg_positive_headway_deviation_minutes`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Top Lines by Positive Headway Deviation"
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "line_sign",
+                  "axis": {
+                    "title": "Line Sign"
+                  }
+                },
+                "y": {
+                  "fieldName": "avg_positive_headway_deviation_minutes",
+                  "axis": {
+                    "title": "Avg Positive Headway Deviation (Min)"
+                  },
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 8,
+            "width": 6,
+            "height": 6
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layoutVersion": "GRID_V1"
+    },
+    {
+      "name": "0718293a",
+      "displayName": "Global Filters",
+      "layout": [
+        {
+          "widget": {
+            "name": "service-date-range",
+            "queries": [
+              {
+                "name": "parameter_dashboards/executive_overview/datasets/executive_summary_p_service_date_range",
+                "query": {
+                  "datasetName": "a1b2c3d4",
+                  "parameters": [
+                    {
+                      "name": "p_service_date_range",
+                      "keyword": "p_service_date_range"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "parameter_dashboards/executive_overview/datasets/daily_trends_p_service_date_range",
+                "query": {
+                  "datasetName": "b2c3d4e5",
+                  "parameters": [
+                    {
+                      "name": "p_service_date_range",
+                      "keyword": "p_service_date_range"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "parameter_dashboards/executive_overview/datasets/top_lines_missed_service_p_service_date_range",
+                "query": {
+                  "datasetName": "c3d4e5f6",
+                  "parameters": [
+                    {
+                      "name": "p_service_date_range",
+                      "keyword": "p_service_date_range"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "parameter_dashboards/executive_overview/datasets/top_lines_headway_deviation_p_service_date_range",
+                "query": {
+                  "datasetName": "d4e5f607",
+                  "parameters": [
+                    {
+                      "name": "p_service_date_range",
+                      "keyword": "p_service_date_range"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Service Date Range"
+              },
+              "widgetType": "filter-date-range-picker",
+              "encodings": {
+                "fields": [
+                  {
+                    "parameterName": "p_service_date_range",
+                    "queryName": "parameter_dashboards/executive_overview/datasets/executive_summary_p_service_date_range"
+                  },
+                  {
+                    "parameterName": "p_service_date_range",
+                    "queryName": "parameter_dashboards/executive_overview/datasets/daily_trends_p_service_date_range"
+                  },
+                  {
+                    "parameterName": "p_service_date_range",
+                    "queryName": "parameter_dashboards/executive_overview/datasets/top_lines_missed_service_p_service_date_range"
+                  },
+                  {
+                    "parameterName": "p_service_date_range",
+                    "queryName": "parameter_dashboards/executive_overview/datasets/top_lines_headway_deviation_p_service_date_range"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 1,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "gtfs-direction-id",
+            "queries": [
+              {
+                "name": "dashboards/executive_overview/datasets/direction_options_gtfs_direction_id",
+                "query": {
+                  "datasetName": "e5f60718",
+                  "fields": [
+                    {
+                      "name": "gtfs_direction_id",
+                      "expression": "`gtfs_direction_id`"
+                    },
+                    {
+                      "name": "gtfs_direction_id_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "parameter_dashboards/executive_overview/datasets/executive_summary_p_gtfs_direction_id",
+                "query": {
+                  "datasetName": "a1b2c3d4",
+                  "parameters": [
+                    {
+                      "name": "p_gtfs_direction_id",
+                      "keyword": "p_gtfs_direction_id"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "parameter_dashboards/executive_overview/datasets/daily_trends_p_gtfs_direction_id",
+                "query": {
+                  "datasetName": "b2c3d4e5",
+                  "parameters": [
+                    {
+                      "name": "p_gtfs_direction_id",
+                      "keyword": "p_gtfs_direction_id"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "parameter_dashboards/executive_overview/datasets/top_lines_missed_service_p_gtfs_direction_id",
+                "query": {
+                  "datasetName": "c3d4e5f6",
+                  "parameters": [
+                    {
+                      "name": "p_gtfs_direction_id",
+                      "keyword": "p_gtfs_direction_id"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "parameter_dashboards/executive_overview/datasets/top_lines_headway_deviation_p_gtfs_direction_id",
+                "query": {
+                  "datasetName": "d4e5f607",
+                  "parameters": [
+                    {
+                      "name": "p_gtfs_direction_id",
+                      "keyword": "p_gtfs_direction_id"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "GTFS Direction"
+              },
+              "widgetType": "filter-single-select",
+              "encodings": {
+                "fields": [
+                  {
+                    "fieldName": "gtfs_direction_id",
+                    "queryName": "dashboards/executive_overview/datasets/direction_options_gtfs_direction_id"
+                  },
+                  {
+                    "parameterName": "p_gtfs_direction_id",
+                    "queryName": "parameter_dashboards/executive_overview/datasets/executive_summary_p_gtfs_direction_id"
+                  },
+                  {
+                    "parameterName": "p_gtfs_direction_id",
+                    "queryName": "parameter_dashboards/executive_overview/datasets/daily_trends_p_gtfs_direction_id"
+                  },
+                  {
+                    "parameterName": "p_gtfs_direction_id",
+                    "queryName": "parameter_dashboards/executive_overview/datasets/top_lines_missed_service_p_gtfs_direction_id"
+                  },
+                  {
+                    "parameterName": "p_gtfs_direction_id",
+                    "queryName": "parameter_dashboards/executive_overview/datasets/top_lines_headway_deviation_p_gtfs_direction_id"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 2,
+            "width": 1,
+            "height": 2
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_GLOBAL_FILTERS",
+      "layoutVersion": "GRID_V1"
+    }
+  ],
+  "uiSettings": {
+    "theme": {
+      "widgetHeaderAlignment": "ALIGNMENT_UNSPECIFIED"
+    },
+    "applyModeEnabled": false
+  }
+}

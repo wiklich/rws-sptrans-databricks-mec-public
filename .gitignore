@@ -1,0 +1,107 @@
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars.json
+*.tfplan
+*.tflock
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Local configuration with real identifiers (see README.md, "Local configuration")
+*.local.tfvars
+*.local.hcl
+
+# Binaries and builds
+*.exe
+*.dll
+*.so
+*.dylib
+*.pyc
+__pycache__/
+*.class
+*.jar
+target/
+build/
+dist/
+*.egg-info/
+
+# Logs and dumps
+*.log
+*.log.*
+*.dmp
+*.stackdump
+
+# Python
+__pycache__/
+*.pyc
+venv/
+.env/
+.venv/
+venv-test/
+.venv-test/
+
+# IDE
+.vscode/*
+!.vscode/settings.json
+.idea/
+*.swp
+*.swo
+*.swn
+*.sublime-project
+*.sublime-workspace
+*.vs/
+*.project
+*.classpath
+.settings/
+
+# SO
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Kubernetes
+.kube/
+*.kubeconfig
+kubeconfig*
+
+# Docker
+.dockerenv
+.dockerinit
+*.dockerignore
+docker/local
+
+# Outros
+*.tmp
+*.temp
+*.bak
+*.backup
+*.orig
+*.rej
+*~
+*.zip
+*.rar
+
+.hypothesis/
+.hypothesis/*
+*hypothesis/*
+
+dummy/
+dummy_audit/
+.databricks
+
+.databricks
+
+.databricks
+
+.databricks
+
+.databricks
+
+.databricks

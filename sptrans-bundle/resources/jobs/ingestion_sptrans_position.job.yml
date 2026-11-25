@@ -1,0 +1,15 @@
+resources:
+  jobs:
+    ingestion_sptrans_position_job:
+      name: ingestion_sptrans_position_job
+
+      tasks:
+        - task_key: run_ingestion_sptrans_position
+          spark_python_task:
+            python_file: ../../../src/pipelines/bronze_observed/ingestion/ingestion_sptrans_position_job.py
+          environment_key: default
+
+      environments:
+        - environment_key: default
+          spec:
+            environment_version: "2"

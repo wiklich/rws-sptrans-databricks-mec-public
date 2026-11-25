@@ -1,0 +1,931 @@
+{
+  "datasets": [
+    {
+      "name": "1f2a3b4c",
+      "displayName": "system_wide_summary",
+      "queryLines": [
+        "SELECT\r\n",
+        "  aggregation_scope,\r\n",
+        "  vehicles_count,\r\n",
+        "  total_observations_count,\r\n",
+        "  total_measured_intervals_count,\r\n",
+        "  system_avg_update_interval_seconds,\r\n",
+        "  system_min_update_interval_seconds,\r\n",
+        "  system_max_update_interval_seconds,\r\n",
+        "  system_avg_vehicle_stddev_interval_seconds,\r\n",
+        "  total_distinct_minutes_with_data,\r\n",
+        "  avg_continuity_support_ratio,\r\n",
+        "  total_large_gaps_count,\r\n",
+        "  record_created_at\r\n",
+        "FROM main.gold.gold_system_wide_update_behavior\r\n",
+        "ORDER BY aggregation_scope"
+      ]
+    },
+    {
+      "name": "2a3b4c5d",
+      "displayName": "system_wide_metric_profile",
+      "queryLines": [
+        "SELECT\r\n",
+        "  aggregation_scope,\r\n",
+        "  'Vehicles Count' AS metric_name,\r\n",
+        "  CAST(vehicles_count AS DOUBLE) AS metric_value,\r\n",
+        "  'count' AS metric_group\r\n",
+        "FROM main.gold.gold_system_wide_update_behavior\r\n",
+        "UNION ALL\r\n",
+        "SELECT\r\n",
+        "  aggregation_scope,\r\n",
+        "  'Total Observations Count' AS metric_name,\r\n",
+        "  CAST(total_observations_count AS DOUBLE) AS metric_value,\r\n",
+        "  'count' AS metric_group\r\n",
+        "FROM main.gold.gold_system_wide_update_behavior\r\n",
+        "UNION ALL\r\n",
+        "SELECT\r\n",
+        "  aggregation_scope,\r\n",
+        "  'Total Measured Intervals Count' AS metric_name,\r\n",
+        "  CAST(total_measured_intervals_count AS DOUBLE) AS metric_value,\r\n",
+        "  'count' AS metric_group\r\n",
+        "FROM main.gold.gold_system_wide_update_behavior\r\n",
+        "UNION ALL\r\n",
+        "SELECT\r\n",
+        "  aggregation_scope,\r\n",
+        "  'Total Distinct Minutes With Data' AS metric_name,\r\n",
+        "  CAST(total_distinct_minutes_with_data AS DOUBLE) AS metric_value,\r\n",
+        "  'count' AS metric_group\r\n",
+        "FROM main.gold.gold_system_wide_update_behavior\r\n",
+        "UNION ALL\r\n",
+        "SELECT\r\n",
+        "  aggregation_scope,\r\n",
+        "  'System Avg Update Interval (Sec)' AS metric_name,\r\n",
+        "  CAST(system_avg_update_interval_seconds AS DOUBLE) AS metric_value,\r\n",
+        "  'interval' AS metric_group\r\n",
+        "FROM main.gold.gold_system_wide_update_behavior\r\n",
+        "UNION ALL\r\n",
+        "SELECT\r\n",
+        "  aggregation_scope,\r\n",
+        "  'System Min Update Interval (Sec)' AS metric_name,\r\n",
+        "  CAST(system_min_update_interval_seconds AS DOUBLE) AS metric_value,\r\n",
+        "  'interval' AS metric_group\r\n",
+        "FROM main.gold.gold_system_wide_update_behavior\r\n",
+        "UNION ALL\r\n",
+        "SELECT\r\n",
+        "  aggregation_scope,\r\n",
+        "  'System Max Update Interval (Sec)' AS metric_name,\r\n",
+        "  CAST(system_max_update_interval_seconds AS DOUBLE) AS metric_value,\r\n",
+        "  'interval' AS metric_group\r\n",
+        "FROM main.gold.gold_system_wide_update_behavior\r\n",
+        "UNION ALL\r\n",
+        "SELECT\r\n",
+        "  aggregation_scope,\r\n",
+        "  'Avg Vehicle Stddev Interval (Sec)' AS metric_name,\r\n",
+        "  CAST(system_avg_vehicle_stddev_interval_seconds AS DOUBLE) AS metric_value,\r\n",
+        "  'interval' AS metric_group\r\n",
+        "FROM main.gold.gold_system_wide_update_behavior\r\n",
+        "UNION ALL\r\n",
+        "SELECT\r\n",
+        "  aggregation_scope,\r\n",
+        "  'Avg Continuity Support Ratio' AS metric_name,\r\n",
+        "  CAST(avg_continuity_support_ratio AS DOUBLE) AS metric_value,\r\n",
+        "  'ratio' AS metric_group\r\n",
+        "FROM main.gold.gold_system_wide_update_behavior\r\n",
+        "UNION ALL\r\n",
+        "SELECT\r\n",
+        "  aggregation_scope,\r\n",
+        "  'Total Large Gaps Count' AS metric_name,\r\n",
+        "  CAST(total_large_gaps_count AS DOUBLE) AS metric_value,\r\n",
+        "  'count' AS metric_group\r\n",
+        "FROM main.gold.gold_system_wide_update_behavior\r\n",
+        "ORDER BY aggregation_scope, metric_group, metric_name"
+      ]
+    },
+    {
+      "name": "3b4c5d6e",
+      "displayName": "aggregation_scope_options",
+      "queryLines": [
+        "SELECT\r\n",
+        "  aggregation_scope\r\n",
+        "FROM main.gold.gold_system_wide_update_behavior\r\n",
+        "WHERE aggregation_scope IS NOT NULL\r\n",
+        "ORDER BY aggregation_scope"
+      ]
+    }
+  ],
+  "pages": [
+    {
+      "name": "4c5d6e7f",
+      "displayName": "Main KPIs",
+      "layout": [
+        {
+          "widget": {
+            "name": "vehicles-count",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "1f2a3b4c",
+                  "fields": [
+                    {
+                      "name": "aggregation_scope",
+                      "expression": "`aggregation_scope`"
+                    },
+                    {
+                      "name": "vehicles_count",
+                      "expression": "`vehicles_count`"
+                    }
+                  ],
+                  "disaggregated": true,
+                  "orders": [
+                    {
+                      "direction": "ASC",
+                      "expression": "`aggregation_scope`"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "showDescription": true,
+                "title": "Vehicles Count",
+                "description": "Number of distinct vehicles contributing to the system-wide update behavior summary."
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "vehicles_count"
+                },
+                "period": {
+                  "fieldName": "aggregation_scope"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 3,
+            "height": 4
+          }
+        },
+        {
+          "widget": {
+            "name": "total-observations-count",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "1f2a3b4c",
+                  "fields": [
+                    {
+                      "name": "aggregation_scope",
+                      "expression": "`aggregation_scope`"
+                    },
+                    {
+                      "name": "total_observations_count",
+                      "expression": "`total_observations_count`"
+                    }
+                  ],
+                  "disaggregated": true,
+                  "orders": [
+                    {
+                      "direction": "ASC",
+                      "expression": "`aggregation_scope`"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "showDescription": true,
+                "title": "Total Observations Count",
+                "description": "Total number of observed position records contributing to the system-wide summary."
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "total_observations_count"
+                },
+                "period": {
+                  "fieldName": "aggregation_scope"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 3,
+            "y": 0,
+            "width": 3,
+            "height": 4
+          }
+        },
+        {
+          "widget": {
+            "name": "total-measured-intervals-count",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "1f2a3b4c",
+                  "fields": [
+                    {
+                      "name": "aggregation_scope",
+                      "expression": "`aggregation_scope`"
+                    },
+                    {
+                      "name": "total_measured_intervals_count",
+                      "expression": "`total_measured_intervals_count`"
+                    }
+                  ],
+                  "disaggregated": true,
+                  "orders": [
+                    {
+                      "direction": "DESC",
+                      "expression": "`aggregation_scope`"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "showDescription": true,
+                "title": "Total Measured Intervals Count",
+                "description": "Total number of measurable update intervals contributing to the system-wide summary."
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "total_measured_intervals_count"
+                },
+                "period": {
+                  "fieldName": "aggregation_scope"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 0,
+            "width": 3,
+            "height": 4
+          }
+        },
+        {
+          "widget": {
+            "name": "system-avg-update-interval-seconds",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "1f2a3b4c",
+                  "fields": [
+                    {
+                      "name": "aggregation_scope",
+                      "expression": "`aggregation_scope`"
+                    },
+                    {
+                      "name": "system_avg_update_interval_seconds",
+                      "expression": "`system_avg_update_interval_seconds`"
+                    }
+                  ],
+                  "disaggregated": true,
+                  "orders": [
+                    {
+                      "direction": "ASC",
+                      "expression": "`aggregation_scope`"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "showDescription": true,
+                "title": "System Avg Update Interval (Sec)",
+                "description": "System-wide weighted average observed update interval in seconds."
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "system_avg_update_interval_seconds"
+                },
+                "period": {
+                  "fieldName": "aggregation_scope"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 9,
+            "y": 0,
+            "width": 3,
+            "height": 4
+          }
+        },
+        {
+          "widget": {
+            "name": "system-min-update-interval-seconds",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "1f2a3b4c",
+                  "fields": [
+                    {
+                      "name": "aggregation_scope",
+                      "expression": "`aggregation_scope`"
+                    },
+                    {
+                      "name": "system_min_update_interval_seconds",
+                      "expression": "`system_min_update_interval_seconds`"
+                    }
+                  ],
+                  "disaggregated": true,
+                  "orders": [
+                    {
+                      "direction": "ASC",
+                      "expression": "`aggregation_scope`"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "showDescription": true,
+                "title": "System Min Update Interval (Sec)",
+                "description": "Shortest observed vehicle-level update interval contributing to the system-wide summary."
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "system_min_update_interval_seconds"
+                },
+                "period": {
+                  "fieldName": "aggregation_scope"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 4,
+            "width": 3,
+            "height": 4
+          }
+        },
+        {
+          "widget": {
+            "name": "system-max-update-interval-seconds",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "1f2a3b4c",
+                  "fields": [
+                    {
+                      "name": "aggregation_scope",
+                      "expression": "`aggregation_scope`"
+                    },
+                    {
+                      "name": "system_max_update_interval_seconds",
+                      "expression": "`system_max_update_interval_seconds`"
+                    }
+                  ],
+                  "disaggregated": true,
+                  "orders": [
+                    {
+                      "direction": "ASC",
+                      "expression": "`aggregation_scope`"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "showDescription": true,
+                "title": "System Max Update Interval (Sec)",
+                "description": "Largest observed vehicle-level update interval contributing to the system-wide summary."
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "system_max_update_interval_seconds"
+                },
+                "period": {
+                  "fieldName": "aggregation_scope"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 3,
+            "y": 4,
+            "width": 3,
+            "height": 4
+          }
+        },
+        {
+          "widget": {
+            "name": "avg-continuity-support-ratio",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "1f2a3b4c",
+                  "fields": [
+                    {
+                      "name": "aggregation_scope",
+                      "expression": "`aggregation_scope`"
+                    },
+                    {
+                      "name": "avg_continuity_support_ratio",
+                      "expression": "`avg_continuity_support_ratio`"
+                    }
+                  ],
+                  "disaggregated": true,
+                  "orders": [
+                    {
+                      "direction": "ASC",
+                      "expression": "`aggregation_scope`"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "showDescription": true,
+                "title": "Avg Continuity Support Ratio",
+                "description": "Average vehicle-level continuity support ratio across the observed fleet."
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "avg_continuity_support_ratio"
+                },
+                "period": {
+                  "fieldName": "aggregation_scope"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 4,
+            "width": 3,
+            "height": 4
+          }
+        },
+        {
+          "widget": {
+            "name": "total-large-gaps-count",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "1f2a3b4c",
+                  "fields": [
+                    {
+                      "name": "aggregation_scope",
+                      "expression": "`aggregation_scope`"
+                    },
+                    {
+                      "name": "total_large_gaps_count",
+                      "expression": "`total_large_gaps_count`"
+                    }
+                  ],
+                  "disaggregated": true,
+                  "orders": [
+                    {
+                      "direction": "ASC",
+                      "expression": "`aggregation_scope`"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "showDescription": true,
+                "title": "Total Large Gaps Count",
+                "description": "Total number of large measured gaps contributing to the system-wide continuity interpretation."
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "total_large_gaps_count"
+                },
+                "period": {
+                  "fieldName": "aggregation_scope"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 9,
+            "y": 4,
+            "width": 3,
+            "height": 4
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layoutVersion": "GRID_V1"
+    },
+    {
+      "name": "5d6e7f80",
+      "displayName": "Support and Regularity Profile",
+      "layout": [
+        {
+          "widget": {
+            "name": "interval-metric-profile",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "2a3b4c5d",
+                  "fields": [
+                    {
+                      "name": "metric_name",
+                      "expression": "`metric_name`"
+                    },
+                    {
+                      "name": "metric_value",
+                      "expression": "`metric_value`"
+                    }
+                  ],
+                  "filters": [
+                    {
+                      "expression": "`aggregation_scope` IN (`aggregation_scope`) OR TRUE"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Interval Metric Profile"
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "metric_name",
+                  "axis": {
+                    "title": "Metric Name"
+                  },
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "metric_value",
+                  "axis": {
+                    "title": "Seconds"
+                  },
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 6,
+            "height": 8
+          }
+        },
+        {
+          "widget": {
+            "name": "support-metric-profile",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "2a3b4c5d",
+                  "fields": [
+                    {
+                      "name": "metric_name",
+                      "expression": "`metric_name`"
+                    },
+                    {
+                      "name": "metric_value",
+                      "expression": "`metric_value`"
+                    }
+                  ],
+                  "filters": [
+                    {
+                      "expression": "`aggregation_scope` IN (`aggregation_scope`) OR TRUE"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Support Metric Profile"
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "metric_name",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "metric_value",
+                  "axis": {
+                    "title": "Count"
+                  },
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 0,
+            "width": 6,
+            "height": 8
+          }
+        },
+        {
+          "widget": {
+            "name": "ratio-metric-profile",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "2a3b4c5d",
+                  "fields": [
+                    {
+                      "name": "metric_name",
+                      "expression": "`metric_name`"
+                    },
+                    {
+                      "name": "metric_value",
+                      "expression": "`metric_value`"
+                    }
+                  ],
+                  "filters": [
+                    {
+                      "expression": "`aggregation_scope` IN (`aggregation_scope`) OR TRUE"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Ratio Metric Profile"
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "metric_name",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "metric_value",
+                  "axis": {
+                    "title": "Ratio"
+                  },
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 8,
+            "width": 6,
+            "height": 9
+          }
+        },
+        {
+          "widget": {
+            "name": "system-wide-detail-table",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "1f2a3b4c",
+                  "fields": [
+                    {
+                      "name": "aggregation_scope",
+                      "expression": "`aggregation_scope`"
+                    },
+                    {
+                      "name": "vehicles_count",
+                      "expression": "`vehicles_count`"
+                    },
+                    {
+                      "name": "total_observations_count",
+                      "expression": "`total_observations_count`"
+                    },
+                    {
+                      "name": "total_measured_intervals_count",
+                      "expression": "`total_measured_intervals_count`"
+                    },
+                    {
+                      "name": "system_avg_update_interval_seconds",
+                      "expression": "`system_avg_update_interval_seconds`"
+                    },
+                    {
+                      "name": "system_min_update_interval_seconds",
+                      "expression": "`system_min_update_interval_seconds`"
+                    },
+                    {
+                      "name": "system_max_update_interval_seconds",
+                      "expression": "`system_max_update_interval_seconds`"
+                    },
+                    {
+                      "name": "system_avg_vehicle_stddev_interval_seconds",
+                      "expression": "`system_avg_vehicle_stddev_interval_seconds`"
+                    },
+                    {
+                      "name": "total_distinct_minutes_with_data",
+                      "expression": "`total_distinct_minutes_with_data`"
+                    },
+                    {
+                      "name": "avg_continuity_support_ratio",
+                      "expression": "`avg_continuity_support_ratio`"
+                    },
+                    {
+                      "name": "total_large_gaps_count",
+                      "expression": "`total_large_gaps_count`"
+                    },
+                    {
+                      "name": "record_created_at",
+                      "expression": "`record_created_at`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "aggregation_scope",
+                    "displayName": "Aggregation Scope"
+                  },
+                  {
+                    "fieldName": "vehicles_count",
+                    "displayName": "Vehicles Count"
+                  },
+                  {
+                    "fieldName": "total_observations_count",
+                    "displayName": "Total Observations Count"
+                  },
+                  {
+                    "fieldName": "total_measured_intervals_count",
+                    "displayName": "Total Measured Intervals Count"
+                  },
+                  {
+                    "fieldName": "system_avg_update_interval_seconds",
+                    "displayName": "System Avg Update Interval (Sec)"
+                  },
+                  {
+                    "fieldName": "system_min_update_interval_seconds",
+                    "displayName": "System Min Update Interval (Sec)"
+                  },
+                  {
+                    "fieldName": "system_max_update_interval_seconds",
+                    "displayName": "System Max Update Interval (Sec)"
+                  },
+                  {
+                    "fieldName": "system_avg_vehicle_stddev_interval_seconds",
+                    "displayName": "Avg Vehicle Stddev Interval (Sec)"
+                  },
+                  {
+                    "fieldName": "total_distinct_minutes_with_data",
+                    "displayName": "Total Distinct Minutes With Data"
+                  },
+                  {
+                    "fieldName": "avg_continuity_support_ratio",
+                    "displayName": "Avg Continuity Support Ratio"
+                  },
+                  {
+                    "fieldName": "total_large_gaps_count",
+                    "displayName": "Total Large Gaps Count"
+                  },
+                  {
+                    "fieldName": "record_created_at",
+                    "displayName": "Record Created At"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 8,
+            "width": 6,
+            "height": 9
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layoutVersion": "GRID_V1"
+    },
+    {
+      "name": "6e7f8091",
+      "displayName": "Global Filters",
+      "layout": [
+        {
+          "widget": {
+            "name": "aggregation-scope",
+            "queries": [
+              {
+                "name": "dashboards/system_wide_update_behavior_overview/datasets/aggregation_scope_options_aggregation_scope",
+                "query": {
+                  "datasetName": "3b4c5d6e",
+                  "fields": [
+                    {
+                      "name": "aggregation_scope",
+                      "expression": "`aggregation_scope`"
+                    },
+                    {
+                      "name": "aggregation_scope_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Aggregation Scope"
+              },
+              "widgetType": "filter-single-select",
+              "encodings": {
+                "fields": [
+                  {
+                    "fieldName": "aggregation_scope",
+                    "queryName": "dashboards/system_wide_update_behavior_overview/datasets/aggregation_scope_options_aggregation_scope"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 4,
+            "height": 1
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_GLOBAL_FILTERS",
+      "layoutVersion": "GRID_V1"
+    }
+  ],
+  "uiSettings": {
+    "theme": {
+      "widgetHeaderAlignment": "ALIGNMENT_UNSPECIFIED"
+    },
+    "applyModeEnabled": false
+  }
+}

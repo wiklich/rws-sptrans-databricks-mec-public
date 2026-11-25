@@ -1,0 +1,904 @@
+{
+  "datasets": [
+    {
+      "name": "a11b22c3",
+      "displayName": "vehicle_frequency_summary",
+      "queryLines": [
+        "SELECT\r\n",
+        "  MAX(record_created_at) AS latest_refresh_at,\r\n",
+        "  COUNT(*) AS vehicles_count,\r\n",
+        "  SUM(updates_count) AS total_updates_count,\r\n",
+        "  SUM(measured_intervals_count) AS total_measured_intervals_count,\r\n",
+        "  CASE\r\n",
+        "    WHEN SUM(measured_intervals_count) = 0 THEN NULL\r\n",
+        "    ELSE SUM(COALESCE(avg_update_interval_seconds, 0.0) * measured_intervals_count) * 1.0 / SUM(measured_intervals_count)\r\n",
+        "  END AS weighted_avg_update_interval_seconds,\r\n",
+        "  AVG(stddev_update_interval_seconds) AS avg_vehicle_stddev_interval_seconds,\r\n",
+        "  AVG(observed_span_seconds) AS avg_observed_span_seconds\r\n",
+        "FROM main.gold.gold_vehicle_update_frequency\r\n",
+        "WHERE (\r\n",
+        "    :p_vehicle_prefix = 'ALL'\r\n",
+        "    OR CAST(vehicle_prefix AS STRING) = :p_vehicle_prefix\r\n",
+        "  )\r\n"
+      ],
+      "parameters": [
+        {
+          "displayName": "Vehicle Prefix",
+          "keyword": "p_vehicle_prefix",
+          "dataType": "STRING",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": [
+                {
+                  "value": "ALL"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "b22c33d4",
+      "displayName": "slowest_vehicles",
+      "queryLines": [
+        "SELECT\r\n",
+        "  CAST(vehicle_prefix AS STRING) AS vehicle_prefix,\r\n",
+        "  updates_count,\r\n",
+        "  measured_intervals_count,\r\n",
+        "  avg_update_interval_seconds,\r\n",
+        "  min_update_interval_seconds,\r\n",
+        "  max_update_interval_seconds,\r\n",
+        "  stddev_update_interval_seconds,\r\n",
+        "  observed_span_seconds\r\n",
+        "FROM main.gold.gold_vehicle_update_frequency\r\n",
+        "WHERE (\r\n",
+        "    :p_vehicle_prefix = 'ALL'\r\n",
+        "    OR CAST(vehicle_prefix AS STRING) = :p_vehicle_prefix\r\n",
+        "  )\r\n",
+        "ORDER BY avg_update_interval_seconds DESC, vehicle_prefix ASC\r\n",
+        "LIMIT 15\r\n"
+      ],
+      "parameters": [
+        {
+          "displayName": "Vehicle Prefix",
+          "keyword": "p_vehicle_prefix",
+          "dataType": "STRING",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": [
+                {
+                  "value": "ALL"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "c33d44e5",
+      "displayName": "fastest_vehicles",
+      "queryLines": [
+        "SELECT\r\n",
+        "  CAST(vehicle_prefix AS STRING) AS vehicle_prefix,\r\n",
+        "  updates_count,\r\n",
+        "  measured_intervals_count,\r\n",
+        "  avg_update_interval_seconds,\r\n",
+        "  min_update_interval_seconds,\r\n",
+        "  max_update_interval_seconds,\r\n",
+        "  stddev_update_interval_seconds,\r\n",
+        "  observed_span_seconds\r\n",
+        "FROM main.gold.gold_vehicle_update_frequency\r\n",
+        "WHERE measured_intervals_count > 0\r\n",
+        "  AND (\r\n",
+        "    :p_vehicle_prefix = 'ALL'\r\n",
+        "    OR CAST(vehicle_prefix AS STRING) = :p_vehicle_prefix\r\n",
+        "  )\r\n",
+        "ORDER BY avg_update_interval_seconds ASC, vehicle_prefix ASC\r\n",
+        "LIMIT 15\r\n"
+      ],
+      "parameters": [
+        {
+          "displayName": "Vehicle Prefix",
+          "keyword": "p_vehicle_prefix",
+          "dataType": "STRING",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": [
+                {
+                  "value": "ALL"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "d44e55f6",
+      "displayName": "support_vs_interval_scatter",
+      "queryLines": [
+        "SELECT\r\n",
+        "  CAST(vehicle_prefix AS STRING) AS vehicle_prefix,\r\n",
+        "  updates_count,\r\n",
+        "  measured_intervals_count,\r\n",
+        "  avg_update_interval_seconds,\r\n",
+        "  min_update_interval_seconds,\r\n",
+        "  max_update_interval_seconds,\r\n",
+        "  stddev_update_interval_seconds,\r\n",
+        "  observed_span_seconds,\r\n",
+        "  first_captured_at_local,\r\n",
+        "  last_captured_at_local\r\n",
+        "FROM main.gold.gold_vehicle_update_frequency\r\n",
+        "WHERE (\r\n",
+        "    :p_vehicle_prefix = 'ALL'\r\n",
+        "    OR CAST(vehicle_prefix AS STRING) = :p_vehicle_prefix\r\n",
+        "  )\r\n",
+        "ORDER BY measured_intervals_count DESC, avg_update_interval_seconds DESC\r\n",
+        "LIMIT 500\r\n"
+      ],
+      "parameters": [
+        {
+          "displayName": "Vehicle Prefix",
+          "keyword": "p_vehicle_prefix",
+          "dataType": "STRING",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": [
+                {
+                  "value": "ALL"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "e55f6677",
+      "displayName": "vehicle_frequency_detail",
+      "queryLines": [
+        "SELECT\r\n",
+        "  CAST(vehicle_prefix AS STRING) AS vehicle_prefix,\r\n",
+        "  updates_count,\r\n",
+        "  measured_intervals_count,\r\n",
+        "  avg_update_interval_seconds,\r\n",
+        "  min_update_interval_seconds,\r\n",
+        "  max_update_interval_seconds,\r\n",
+        "  stddev_update_interval_seconds,\r\n",
+        "  first_captured_at_local,\r\n",
+        "  last_captured_at_local,\r\n",
+        "  observed_span_seconds,\r\n",
+        "  record_created_at\r\n",
+        "FROM main.gold.gold_vehicle_update_frequency\r\n",
+        "WHERE (\r\n",
+        "    :p_vehicle_prefix = 'ALL'\r\n",
+        "    OR CAST(vehicle_prefix AS STRING) = :p_vehicle_prefix\r\n",
+        "  )\r\n",
+        "ORDER BY avg_update_interval_seconds DESC, vehicle_prefix ASC\r\n",
+        "LIMIT 500\r\n"
+      ],
+      "parameters": [
+        {
+          "displayName": "Vehicle Prefix",
+          "keyword": "p_vehicle_prefix",
+          "dataType": "STRING",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": [
+                {
+                  "value": "ALL"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "f6677889",
+      "displayName": "vehicle_prefix_options",
+      "queryLines": [
+        "SELECT\r\n",
+        "  vehicle_prefix\r\n",
+        "FROM (\r\n",
+        "  SELECT 'ALL' AS vehicle_prefix, 0 AS sort_order\r\n",
+        "  UNION ALL\r\n",
+        "  SELECT DISTINCT CAST(vehicle_prefix AS STRING) AS vehicle_prefix, 1 AS sort_order\r\n",
+        "  FROM main.gold.gold_vehicle_update_frequency\r\n",
+        "  WHERE vehicle_prefix IS NOT NULL\r\n",
+        ") options\r\n",
+        "ORDER BY sort_order, vehicle_prefix\r\n"
+      ]
+    }
+  ],
+  "pages": [
+    {
+      "name": "778899aa",
+      "displayName": "Executive Overview",
+      "layout": [
+        {
+          "widget": {
+            "name": "vehicles-count",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "a11b22c3",
+                  "fields": [
+                    {
+                      "name": "latest_refresh_at",
+                      "expression": "`latest_refresh_at`"
+                    },
+                    {
+                      "name": "vehicles_count",
+                      "expression": "`vehicles_count`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "showDescription": true,
+                "title": "Vehicles Count",
+                "description": "Number of vehicles represented in the vehicle update frequency output."
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "vehicles_count"
+                },
+                "period": {
+                  "fieldName": "latest_refresh_at"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 3,
+            "height": 4
+          }
+        },
+        {
+          "widget": {
+            "name": "total-updates-count",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "a11b22c3",
+                  "fields": [
+                    {
+                      "name": "latest_refresh_at",
+                      "expression": "`latest_refresh_at`"
+                    },
+                    {
+                      "name": "total_updates_count",
+                      "expression": "`total_updates_count`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "showDescription": true,
+                "title": "Total Updates Count",
+                "description": "Total number of observed position records contributing to the vehicle-level frequency analysis."
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "total_updates_count"
+                },
+                "period": {
+                  "fieldName": "latest_refresh_at"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 3,
+            "y": 0,
+            "width": 3,
+            "height": 4
+          }
+        },
+        {
+          "widget": {
+            "name": "total-measured-intervals-count",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "a11b22c3",
+                  "fields": [
+                    {
+                      "name": "latest_refresh_at",
+                      "expression": "`latest_refresh_at`"
+                    },
+                    {
+                      "name": "total_measured_intervals_count",
+                      "expression": "`total_measured_intervals_count`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "showDescription": true,
+                "title": "Total Measured Intervals Count",
+                "description": "Total number of valid measurable update intervals across the observed fleet."
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "total_measured_intervals_count"
+                },
+                "period": {
+                  "fieldName": "latest_refresh_at"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 0,
+            "width": 3,
+            "height": 4
+          }
+        },
+        {
+          "widget": {
+            "name": "weighted-avg-update-interval-seconds",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "a11b22c3",
+                  "fields": [
+                    {
+                      "name": "latest_refresh_at",
+                      "expression": "`latest_refresh_at`"
+                    },
+                    {
+                      "name": "weighted_avg_update_interval_seconds",
+                      "expression": "`weighted_avg_update_interval_seconds`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "showDescription": true,
+                "title": "Weighted Avg Update Interval (Sec)",
+                "description": "Weighted average observed update interval in seconds across vehicles, using measured interval support."
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "weighted_avg_update_interval_seconds"
+                },
+                "period": {
+                  "fieldName": "latest_refresh_at"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 9,
+            "y": 0,
+            "width": 3,
+            "height": 4
+          }
+        },
+        {
+          "widget": {
+            "name": "slowest-vehicles-by-avg-interval",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "b22c33d4",
+                  "fields": [
+                    {
+                      "name": "vehicle_prefix",
+                      "expression": "`vehicle_prefix`"
+                    },
+                    {
+                      "name": "avg_update_interval_seconds",
+                      "expression": "`avg_update_interval_seconds`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Slowest Vehicles by Avg Update Interval"
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "vehicle_prefix",
+                  "axis": {
+                    "title": "Vehicle Prefix"
+                  },
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "avg_update_interval_seconds",
+                  "axis": {
+                    "title": "Avg Update Interval (Sec)"
+                  },
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 4,
+            "width": 12,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "fastest-vehicles-by-avg-interval",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "c33d44e5",
+                  "fields": [
+                    {
+                      "name": "vehicle_prefix",
+                      "expression": "`vehicle_prefix`"
+                    },
+                    {
+                      "name": "avg_update_interval_seconds",
+                      "expression": "`avg_update_interval_seconds`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Fastest Vehicles by Avg Update Interval"
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "vehicle_prefix",
+                  "axis": {
+                    "title": "Vehicle Prefix"
+                  },
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "avg_update_interval_seconds",
+                  "axis": {
+                    "title": "Avg Update Interval (Sec)"
+                  },
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 10,
+            "width": 12,
+            "height": 6
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layoutVersion": "GRID_V1"
+    },
+    {
+      "name": "8899aabb",
+      "displayName": "Support and Detail",
+      "layout": [
+        {
+          "widget": {
+            "name": "support-vs-interval-scatter",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "d44e55f6",
+                  "fields": [
+                    {
+                      "name": "measured_intervals_count",
+                      "expression": "`measured_intervals_count`"
+                    },
+                    {
+                      "name": "avg_update_interval_seconds",
+                      "expression": "`avg_update_interval_seconds`"
+                    },
+                    {
+                      "name": "updates_count",
+                      "expression": "`updates_count`"
+                    },
+                    {
+                      "name": "stddev_update_interval_seconds",
+                      "expression": "`stddev_update_interval_seconds`"
+                    },
+                    {
+                      "name": "vehicle_prefix",
+                      "expression": "`vehicle_prefix`"
+                    },
+                    {
+                      "name": "observed_span_seconds",
+                      "expression": "`observed_span_seconds`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Support vs Avg Update Interval"
+              },
+              "widgetType": "scatter",
+              "encodings": {
+                "x": {
+                  "fieldName": "measured_intervals_count",
+                  "axis": {
+                    "title": "Measured Intervals Count"
+                  },
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "y": {
+                  "fieldName": "avg_update_interval_seconds",
+                  "axis": {
+                    "title": "Avg Update Interval (Sec)"
+                  },
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "size": {
+                  "fieldName": "updates_count",
+                  "legend": {
+                    "title": "Updates Count"
+                  }
+                },
+                "color": {
+                  "fieldName": "stddev_update_interval_seconds",
+                  "legend": {
+                    "title": "Stddev Interval (Sec)"
+                  },
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "label": {
+                  "fieldName": "vehicle_prefix"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 12,
+            "height": 7
+          }
+        },
+        {
+          "widget": {
+            "name": "vehicle-frequency-detail-table",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "e55f6677",
+                  "fields": [
+                    {
+                      "name": "vehicle_prefix",
+                      "expression": "`vehicle_prefix`"
+                    },
+                    {
+                      "name": "updates_count",
+                      "expression": "`updates_count`"
+                    },
+                    {
+                      "name": "measured_intervals_count",
+                      "expression": "`measured_intervals_count`"
+                    },
+                    {
+                      "name": "avg_update_interval_seconds",
+                      "expression": "`avg_update_interval_seconds`"
+                    },
+                    {
+                      "name": "min_update_interval_seconds",
+                      "expression": "`min_update_interval_seconds`"
+                    },
+                    {
+                      "name": "max_update_interval_seconds",
+                      "expression": "`max_update_interval_seconds`"
+                    },
+                    {
+                      "name": "stddev_update_interval_seconds",
+                      "expression": "`stddev_update_interval_seconds`"
+                    },
+                    {
+                      "name": "first_captured_at_local",
+                      "expression": "`first_captured_at_local`"
+                    },
+                    {
+                      "name": "last_captured_at_local",
+                      "expression": "`last_captured_at_local`"
+                    },
+                    {
+                      "name": "observed_span_seconds",
+                      "expression": "`observed_span_seconds`"
+                    }
+                  ],
+                  "disaggregated": true,
+                  "orders": [
+                    {
+                      "direction": "DESC",
+                      "expression": "`avg_update_interval_seconds`"
+                    },
+                    {
+                      "direction": "ASC",
+                      "expression": "`vehicle_prefix`"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "vehicle_prefix",
+                    "displayName": "Vehicle Prefix"
+                  },
+                  {
+                    "fieldName": "updates_count",
+                    "displayName": "Updates Count"
+                  },
+                  {
+                    "fieldName": "measured_intervals_count",
+                    "displayName": "Measured Intervals Count"
+                  },
+                  {
+                    "fieldName": "avg_update_interval_seconds",
+                    "displayName": "Avg Update Interval (Sec)"
+                  },
+                  {
+                    "fieldName": "min_update_interval_seconds",
+                    "displayName": "Min Update Interval (Sec)"
+                  },
+                  {
+                    "fieldName": "max_update_interval_seconds",
+                    "displayName": "Max Update Interval (Sec)"
+                  },
+                  {
+                    "fieldName": "stddev_update_interval_seconds",
+                    "displayName": "Stddev Update Interval (Sec)"
+                  },
+                  {
+                    "fieldName": "first_captured_at_local",
+                    "displayName": "First Captured At Local"
+                  },
+                  {
+                    "fieldName": "last_captured_at_local",
+                    "displayName": "Last Captured At Local"
+                  },
+                  {
+                    "fieldName": "observed_span_seconds",
+                    "displayName": "Observed Span (Sec)"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 7,
+            "width": 12,
+            "height": 7
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layoutVersion": "GRID_V1"
+    },
+    {
+      "name": "99aabbcc",
+      "displayName": "Global Filters",
+      "layout": [
+        {
+          "widget": {
+            "name": "vehicle-prefix",
+            "queries": [
+              {
+                "name": "dashboards/vehicle_update_frequency_explorer/datasets/vehicle_prefix_options_vehicle_prefix",
+                "query": {
+                  "datasetName": "f6677889",
+                  "fields": [
+                    {
+                      "name": "vehicle_prefix",
+                      "expression": "`vehicle_prefix`"
+                    },
+                    {
+                      "name": "vehicle_prefix_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "parameter_dashboards/vehicle_update_frequency_explorer/datasets/vehicle_frequency_summary_p_vehicle_prefix",
+                "query": {
+                  "datasetName": "a11b22c3",
+                  "parameters": [
+                    {
+                      "name": "p_vehicle_prefix",
+                      "keyword": "p_vehicle_prefix"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "parameter_dashboards/vehicle_update_frequency_explorer/datasets/slowest_vehicles_p_vehicle_prefix",
+                "query": {
+                  "datasetName": "b22c33d4",
+                  "parameters": [
+                    {
+                      "name": "p_vehicle_prefix",
+                      "keyword": "p_vehicle_prefix"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "parameter_dashboards/vehicle_update_frequency_explorer/datasets/fastest_vehicles_p_vehicle_prefix",
+                "query": {
+                  "datasetName": "c33d44e5",
+                  "parameters": [
+                    {
+                      "name": "p_vehicle_prefix",
+                      "keyword": "p_vehicle_prefix"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "parameter_dashboards/vehicle_update_frequency_explorer/datasets/support_vs_interval_scatter_p_vehicle_prefix",
+                "query": {
+                  "datasetName": "d44e55f6",
+                  "parameters": [
+                    {
+                      "name": "p_vehicle_prefix",
+                      "keyword": "p_vehicle_prefix"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "parameter_dashboards/vehicle_update_frequency_explorer/datasets/vehicle_frequency_detail_p_vehicle_prefix",
+                "query": {
+                  "datasetName": "e55f6677",
+                  "parameters": [
+                    {
+                      "name": "p_vehicle_prefix",
+                      "keyword": "p_vehicle_prefix"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Vehicle Prefix"
+              },
+              "widgetType": "filter-single-select",
+              "encodings": {
+                "fields": [
+                  {
+                    "fieldName": "vehicle_prefix",
+                    "queryName": "dashboards/vehicle_update_frequency_explorer/datasets/vehicle_prefix_options_vehicle_prefix"
+                  },
+                  {
+                    "parameterName": "p_vehicle_prefix",
+                    "queryName": "parameter_dashboards/vehicle_update_frequency_explorer/datasets/vehicle_frequency_summary_p_vehicle_prefix"
+                  },
+                  {
+                    "parameterName": "p_vehicle_prefix",
+                    "queryName": "parameter_dashboards/vehicle_update_frequency_explorer/datasets/slowest_vehicles_p_vehicle_prefix"
+                  },
+                  {
+                    "parameterName": "p_vehicle_prefix",
+                    "queryName": "parameter_dashboards/vehicle_update_frequency_explorer/datasets/fastest_vehicles_p_vehicle_prefix"
+                  },
+                  {
+                    "parameterName": "p_vehicle_prefix",
+                    "queryName": "parameter_dashboards/vehicle_update_frequency_explorer/datasets/support_vs_interval_scatter_p_vehicle_prefix"
+                  },
+                  {
+                    "parameterName": "p_vehicle_prefix",
+                    "queryName": "parameter_dashboards/vehicle_update_frequency_explorer/datasets/vehicle_frequency_detail_p_vehicle_prefix"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 4,
+            "height": 1
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_GLOBAL_FILTERS",
+      "layoutVersion": "GRID_V1"
+    }
+  ],
+  "uiSettings": {
+    "theme": {
+      "widgetHeaderAlignment": "ALIGNMENT_UNSPECIFIED"
+    },
+    "applyModeEnabled": false
+  }
+}

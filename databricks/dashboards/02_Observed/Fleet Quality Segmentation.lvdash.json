@@ -1,0 +1,1165 @@
+{
+  "datasets": [
+    {
+      "name": "a101b202",
+      "displayName": "fleet_quality_summary",
+      "queryLines": [
+        "WITH base AS (\r\n",
+        "  SELECT\r\n",
+        "    uf.vehicle_prefix,\r\n",
+        "    uf.updates_count,\r\n",
+        "    uf.measured_intervals_count,\r\n",
+        "    uf.avg_update_interval_seconds,\r\n",
+        "    uf.stddev_update_interval_seconds,\r\n",
+        "    oc.continuity_support_ratio,\r\n",
+        "    oc.large_gaps_count,\r\n",
+        "    oc.max_gap_seconds,\r\n",
+        "    md.observed_dates_count,\r\n",
+        "    md.missing_dates_within_span_count,\r\n",
+        "    md.date_presence_ratio,\r\n",
+        "    md.total_observations_count,\r\n",
+        "    CASE\r\n",
+        "      WHEN uf.avg_update_interval_seconds IS NULL THEN NULL\r\n",
+        "      WHEN uf.avg_update_interval_seconds <= 30 THEN 1.0\r\n",
+        "      WHEN uf.avg_update_interval_seconds >= 300 THEN 0.0\r\n",
+        "      ELSE 1.0 - ((uf.avg_update_interval_seconds - 30.0) / 270.0)\r\n",
+        "    END AS update_regularity_score,\r\n",
+        "    LEAST(GREATEST(COALESCE(oc.continuity_support_ratio, 0.0), 0.0), 1.0) AS continuity_score,\r\n",
+        "    LEAST(GREATEST(COALESCE(md.date_presence_ratio, 0.0), 0.0), 1.0) AS multi_day_score\r\n",
+        "  FROM main.gold.gold_vehicle_update_frequency uf\r\n",
+        "  INNER JOIN main.gold.gold_vehicle_observation_continuity oc\r\n",
+        "    ON uf.vehicle_prefix = oc.vehicle_prefix\r\n",
+        "  INNER JOIN main.gold.gold_vehicle_multi_day_continuity md\r\n",
+        "    ON uf.vehicle_prefix = md.vehicle_prefix\r\n",
+        "  WHERE (\r\n",
+        "      :p_vehicle_prefix = 'ALL'\r\n",
+        "      OR CAST(uf.vehicle_prefix AS STRING) = :p_vehicle_prefix\r\n",
+        "    )\r\n",
+        "),\r\n",
+        "scored AS (\r\n",
+        "  SELECT\r\n",
+        "    *,\r\n",
+        "    ROUND(((0.4 * COALESCE(update_regularity_score, 0.0)) + (0.3 * COALESCE(continuity_score, 0.0)) + (0.3 * COALESCE(multi_day_score, 0.0))) * 100.0, 2) AS quality_score,\r\n",
+        "    CASE\r\n",
+        "      WHEN ((0.4 * COALESCE(update_regularity_score, 0.0)) + (0.3 * COALESCE(continuity_score, 0.0)) + (0.3 * COALESCE(multi_day_score, 0.0))) * 100.0 >= 80 THEN 'Elite'\r\n",
+        "      WHEN ((0.4 * COALESCE(update_regularity_score, 0.0)) + (0.3 * COALESCE(continuity_score, 0.0)) + (0.3 * COALESCE(multi_day_score, 0.0))) * 100.0 >= 60 THEN 'Healthy'\r\n",
+        "      WHEN ((0.4 * COALESCE(update_regularity_score, 0.0)) + (0.3 * COALESCE(continuity_score, 0.0)) + (0.3 * COALESCE(multi_day_score, 0.0))) * 100.0 >= 40 THEN 'Watchlist'\r\n",
+        "      ELSE 'Critical'\r\n",
+        "    END AS quality_segment\r\n",
+        "  FROM base\r\n",
+        ")\r\n",
+        "SELECT\r\n",
+        "  COUNT(*) AS vehicles_count,\r\n",
+        "  AVG(quality_score) AS avg_quality_score,\r\n",
+        "  AVG(avg_update_interval_seconds) AS avg_update_interval_seconds,\r\n",
+        "  AVG(continuity_support_ratio) AS avg_continuity_support_ratio,\r\n",
+        "  AVG(date_presence_ratio) AS avg_date_presence_ratio,\r\n",
+        "  SUM(CASE WHEN quality_segment = 'Elite' THEN 1 ELSE 0 END) AS elite_count,\r\n",
+        "  SUM(CASE WHEN quality_segment = 'Healthy' THEN 1 ELSE 0 END) AS healthy_count,\r\n",
+        "  SUM(CASE WHEN quality_segment = 'Watchlist' THEN 1 ELSE 0 END) AS watchlist_count,\r\n",
+        "  SUM(CASE WHEN quality_segment = 'Critical' THEN 1 ELSE 0 END) AS critical_count\r\n",
+        "FROM scored\r\n",
+        "WHERE (\r\n",
+        "    :p_quality_segment = 'ALL'\r\n",
+        "    OR quality_segment = :p_quality_segment\r\n",
+        "  )\r\n"
+      ],
+      "parameters": [
+        {
+          "displayName": "Vehicle Prefix",
+          "keyword": "p_vehicle_prefix",
+          "dataType": "STRING",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": [
+                {
+                  "value": "ALL"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "displayName": "Quality Segment",
+          "keyword": "p_quality_segment",
+          "dataType": "STRING",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": [
+                {
+                  "value": "ALL"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "b202c303",
+      "displayName": "fleet_quality_scatter",
+      "queryLines": [
+        "WITH base AS (\r\n",
+        "  SELECT\r\n",
+        "    uf.vehicle_prefix,\r\n",
+        "    uf.updates_count,\r\n",
+        "    uf.measured_intervals_count,\r\n",
+        "    uf.avg_update_interval_seconds,\r\n",
+        "    uf.stddev_update_interval_seconds,\r\n",
+        "    oc.continuity_support_ratio,\r\n",
+        "    oc.large_gaps_count,\r\n",
+        "    oc.max_gap_seconds,\r\n",
+        "    md.observed_dates_count,\r\n",
+        "    md.missing_dates_within_span_count,\r\n",
+        "    md.date_presence_ratio,\r\n",
+        "    md.total_observations_count,\r\n",
+        "    md.max_consecutive_observed_dates,\r\n",
+        "    md.max_consecutive_missing_dates_within_span,\r\n",
+        "    CASE\r\n",
+        "      WHEN uf.avg_update_interval_seconds IS NULL THEN NULL\r\n",
+        "      WHEN uf.avg_update_interval_seconds <= 30 THEN 1.0\r\n",
+        "      WHEN uf.avg_update_interval_seconds >= 300 THEN 0.0\r\n",
+        "      ELSE 1.0 - ((uf.avg_update_interval_seconds - 30.0) / 270.0)\r\n",
+        "    END AS update_regularity_score,\r\n",
+        "    LEAST(GREATEST(COALESCE(oc.continuity_support_ratio, 0.0), 0.0), 1.0) AS continuity_score,\r\n",
+        "    LEAST(GREATEST(COALESCE(md.date_presence_ratio, 0.0), 0.0), 1.0) AS multi_day_score\r\n",
+        "  FROM main.gold.gold_vehicle_update_frequency uf\r\n",
+        "  INNER JOIN main.gold.gold_vehicle_observation_continuity oc\r\n",
+        "    ON uf.vehicle_prefix = oc.vehicle_prefix\r\n",
+        "  INNER JOIN main.gold.gold_vehicle_multi_day_continuity md\r\n",
+        "    ON uf.vehicle_prefix = md.vehicle_prefix\r\n",
+        "  WHERE (\r\n",
+        "      :p_vehicle_prefix = 'ALL'\r\n",
+        "      OR CAST(uf.vehicle_prefix AS STRING) = :p_vehicle_prefix\r\n",
+        "    )\r\n",
+        ")\r\n",
+        "SELECT\r\n",
+        "  CAST(vehicle_prefix AS STRING) AS vehicle_prefix,\r\n",
+        "  updates_count,\r\n",
+        "  measured_intervals_count,\r\n",
+        "  avg_update_interval_seconds,\r\n",
+        "  stddev_update_interval_seconds,\r\n",
+        "  continuity_support_ratio,\r\n",
+        "  large_gaps_count,\r\n",
+        "  max_gap_seconds,\r\n",
+        "  observed_dates_count,\r\n",
+        "  missing_dates_within_span_count,\r\n",
+        "  date_presence_ratio,\r\n",
+        "  total_observations_count,\r\n",
+        "  max_consecutive_observed_dates,\r\n",
+        "  max_consecutive_missing_dates_within_span,\r\n",
+        "  ROUND(((0.4 * COALESCE(update_regularity_score, 0.0)) + (0.3 * COALESCE(continuity_score, 0.0)) + (0.3 * COALESCE(multi_day_score, 0.0))) * 100.0, 2) AS quality_score,\r\n",
+        "  CASE\r\n",
+        "    WHEN ((0.4 * COALESCE(update_regularity_score, 0.0)) + (0.3 * COALESCE(continuity_score, 0.0)) + (0.3 * COALESCE(multi_day_score, 0.0))) * 100.0 >= 80 THEN 'Elite'\r\n",
+        "    WHEN ((0.4 * COALESCE(update_regularity_score, 0.0)) + (0.3 * COALESCE(continuity_score, 0.0)) + (0.3 * COALESCE(multi_day_score, 0.0))) * 100.0 >= 60 THEN 'Healthy'\r\n",
+        "    WHEN ((0.4 * COALESCE(update_regularity_score, 0.0)) + (0.3 * COALESCE(continuity_score, 0.0)) + (0.3 * COALESCE(multi_day_score, 0.0))) * 100.0 >= 40 THEN 'Watchlist'\r\n",
+        "    ELSE 'Critical'\r\n",
+        "  END AS quality_segment\r\n",
+        "FROM base\r\n",
+        "WHERE (\r\n",
+        "    :p_quality_segment = 'ALL'\r\n",
+        "    OR CASE\r\n",
+        "      WHEN ((0.4 * COALESCE(update_regularity_score, 0.0)) + (0.3 * COALESCE(continuity_score, 0.0)) + (0.3 * COALESCE(multi_day_score, 0.0))) * 100.0 >= 80 THEN 'Elite'\r\n",
+        "      WHEN ((0.4 * COALESCE(update_regularity_score, 0.0)) + (0.3 * COALESCE(continuity_score, 0.0)) + (0.3 * COALESCE(multi_day_score, 0.0))) * 100.0 >= 60 THEN 'Healthy'\r\n",
+        "      WHEN ((0.4 * COALESCE(update_regularity_score, 0.0)) + (0.3 * COALESCE(continuity_score, 0.0)) + (0.3 * COALESCE(multi_day_score, 0.0))) * 100.0 >= 40 THEN 'Watchlist'\r\n",
+        "      ELSE 'Critical'\r\n",
+        "    END = :p_quality_segment\r\n",
+        "  )\r\n",
+        "ORDER BY quality_score ASC, vehicle_prefix ASC\r\n",
+        "LIMIT 500\r\n"
+      ],
+      "parameters": [
+        {
+          "displayName": "Vehicle Prefix",
+          "keyword": "p_vehicle_prefix",
+          "dataType": "STRING",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": [
+                {
+                  "value": "ALL"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "displayName": "Quality Segment",
+          "keyword": "p_quality_segment",
+          "dataType": "STRING",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": [
+                {
+                  "value": "ALL"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "c303d404",
+      "displayName": "best_quality_vehicles",
+      "queryLines": [
+        "WITH base AS (\r\n",
+        "  SELECT\r\n",
+        "    uf.vehicle_prefix,\r\n",
+        "    uf.avg_update_interval_seconds,\r\n",
+        "    oc.continuity_support_ratio,\r\n",
+        "    md.date_presence_ratio,\r\n",
+        "    CASE\r\n",
+        "      WHEN uf.avg_update_interval_seconds IS NULL THEN NULL\r\n",
+        "      WHEN uf.avg_update_interval_seconds <= 30 THEN 1.0\r\n",
+        "      WHEN uf.avg_update_interval_seconds >= 300 THEN 0.0\r\n",
+        "      ELSE 1.0 - ((uf.avg_update_interval_seconds - 30.0) / 270.0)\r\n",
+        "    END AS update_regularity_score,\r\n",
+        "    LEAST(GREATEST(COALESCE(oc.continuity_support_ratio, 0.0), 0.0), 1.0) AS continuity_score,\r\n",
+        "    LEAST(GREATEST(COALESCE(md.date_presence_ratio, 0.0), 0.0), 1.0) AS multi_day_score\r\n",
+        "  FROM main.gold.gold_vehicle_update_frequency uf\r\n",
+        "  INNER JOIN main.gold.gold_vehicle_observation_continuity oc\r\n",
+        "    ON uf.vehicle_prefix = oc.vehicle_prefix\r\n",
+        "  INNER JOIN main.gold.gold_vehicle_multi_day_continuity md\r\n",
+        "    ON uf.vehicle_prefix = md.vehicle_prefix\r\n",
+        ")\r\n",
+        "SELECT\r\n",
+        "  CAST(vehicle_prefix AS STRING) AS vehicle_prefix,\r\n",
+        "  avg_update_interval_seconds,\r\n",
+        "  continuity_support_ratio,\r\n",
+        "  date_presence_ratio,\r\n",
+        "  ROUND(((0.4 * COALESCE(update_regularity_score, 0.0)) + (0.3 * COALESCE(continuity_score, 0.0)) + (0.3 * COALESCE(multi_day_score, 0.0))) * 100.0, 2) AS quality_score\r\n",
+        "FROM base\r\n",
+        "ORDER BY quality_score DESC, vehicle_prefix ASC\r\n",
+        "LIMIT 15\r\n"
+      ]
+    },
+    {
+      "name": "d404e505",
+      "displayName": "worst_quality_vehicles",
+      "queryLines": [
+        "WITH base AS (\r\n",
+        "  SELECT\r\n",
+        "    uf.vehicle_prefix,\r\n",
+        "    uf.avg_update_interval_seconds,\r\n",
+        "    oc.continuity_support_ratio,\r\n",
+        "    md.date_presence_ratio,\r\n",
+        "    CASE\r\n",
+        "      WHEN uf.avg_update_interval_seconds IS NULL THEN NULL\r\n",
+        "      WHEN uf.avg_update_interval_seconds <= 30 THEN 1.0\r\n",
+        "      WHEN uf.avg_update_interval_seconds >= 300 THEN 0.0\r\n",
+        "      ELSE 1.0 - ((uf.avg_update_interval_seconds - 30.0) / 270.0)\r\n",
+        "    END AS update_regularity_score,\r\n",
+        "    LEAST(GREATEST(COALESCE(oc.continuity_support_ratio, 0.0), 0.0), 1.0) AS continuity_score,\r\n",
+        "    LEAST(GREATEST(COALESCE(md.date_presence_ratio, 0.0), 0.0), 1.0) AS multi_day_score\r\n",
+        "  FROM main.gold.gold_vehicle_update_frequency uf\r\n",
+        "  INNER JOIN main.gold.gold_vehicle_observation_continuity oc\r\n",
+        "    ON uf.vehicle_prefix = oc.vehicle_prefix\r\n",
+        "  INNER JOIN main.gold.gold_vehicle_multi_day_continuity md\r\n",
+        "    ON uf.vehicle_prefix = md.vehicle_prefix\r\n",
+        ")\r\n",
+        "SELECT\r\n",
+        "  CAST(vehicle_prefix AS STRING) AS vehicle_prefix,\r\n",
+        "  avg_update_interval_seconds,\r\n",
+        "  continuity_support_ratio,\r\n",
+        "  date_presence_ratio,\r\n",
+        "  ROUND(((0.4 * COALESCE(update_regularity_score, 0.0)) + (0.3 * COALESCE(continuity_score, 0.0)) + (0.3 * COALESCE(multi_day_score, 0.0))) * 100.0, 2) AS quality_score\r\n",
+        "FROM base\r\n",
+        "ORDER BY quality_score ASC, vehicle_prefix ASC\r\n",
+        "LIMIT 15\r\n"
+      ]
+    },
+    {
+      "name": "e505f606",
+      "displayName": "fleet_quality_detail",
+      "queryLines": [
+        "WITH base AS (\r\n",
+        "  SELECT\r\n",
+        "    uf.vehicle_prefix,\r\n",
+        "    uf.updates_count,\r\n",
+        "    uf.measured_intervals_count,\r\n",
+        "    uf.avg_update_interval_seconds,\r\n",
+        "    uf.min_update_interval_seconds,\r\n",
+        "    uf.max_update_interval_seconds,\r\n",
+        "    uf.stddev_update_interval_seconds,\r\n",
+        "    oc.observations_count,\r\n",
+        "    oc.measured_gaps_count,\r\n",
+        "    oc.avg_gap_seconds,\r\n",
+        "    oc.max_gap_seconds,\r\n",
+        "    oc.large_gaps_count,\r\n",
+        "    oc.continuity_support_ratio,\r\n",
+        "    md.observed_dates_count,\r\n",
+        "    md.observed_date_span_days,\r\n",
+        "    md.missing_dates_within_span_count,\r\n",
+        "    md.date_presence_ratio,\r\n",
+        "    md.total_observations_count,\r\n",
+        "    md.avg_observations_per_observed_date,\r\n",
+        "    md.max_consecutive_observed_dates,\r\n",
+        "    md.max_consecutive_missing_dates_within_span,\r\n",
+        "    CASE\r\n",
+        "      WHEN uf.avg_update_interval_seconds IS NULL THEN NULL\r\n",
+        "      WHEN uf.avg_update_interval_seconds <= 30 THEN 1.0\r\n",
+        "      WHEN uf.avg_update_interval_seconds >= 300 THEN 0.0\r\n",
+        "      ELSE 1.0 - ((uf.avg_update_interval_seconds - 30.0) / 270.0)\r\n",
+        "    END AS update_regularity_score,\r\n",
+        "    LEAST(GREATEST(COALESCE(oc.continuity_support_ratio, 0.0), 0.0), 1.0) AS continuity_score,\r\n",
+        "    LEAST(GREATEST(COALESCE(md.date_presence_ratio, 0.0), 0.0), 1.0) AS multi_day_score\r\n",
+        "  FROM main.gold.gold_vehicle_update_frequency uf\r\n",
+        "  INNER JOIN main.gold.gold_vehicle_observation_continuity oc\r\n",
+        "    ON uf.vehicle_prefix = oc.vehicle_prefix\r\n",
+        "  INNER JOIN main.gold.gold_vehicle_multi_day_continuity md\r\n",
+        "    ON uf.vehicle_prefix = md.vehicle_prefix\r\n",
+        "  WHERE (\r\n",
+        "      :p_vehicle_prefix = 'ALL'\r\n",
+        "      OR CAST(uf.vehicle_prefix AS STRING) = :p_vehicle_prefix\r\n",
+        "    )\r\n",
+        ")\r\n",
+        "SELECT\r\n",
+        "  CAST(vehicle_prefix AS STRING) AS vehicle_prefix,\r\n",
+        "  updates_count,\r\n",
+        "  measured_intervals_count,\r\n",
+        "  avg_update_interval_seconds,\r\n",
+        "  min_update_interval_seconds,\r\n",
+        "  max_update_interval_seconds,\r\n",
+        "  stddev_update_interval_seconds,\r\n",
+        "  observations_count,\r\n",
+        "  measured_gaps_count,\r\n",
+        "  avg_gap_seconds,\r\n",
+        "  max_gap_seconds,\r\n",
+        "  large_gaps_count,\r\n",
+        "  continuity_support_ratio,\r\n",
+        "  observed_dates_count,\r\n",
+        "  observed_date_span_days,\r\n",
+        "  missing_dates_within_span_count,\r\n",
+        "  date_presence_ratio,\r\n",
+        "  total_observations_count,\r\n",
+        "  avg_observations_per_observed_date,\r\n",
+        "  max_consecutive_observed_dates,\r\n",
+        "  max_consecutive_missing_dates_within_span,\r\n",
+        "  ROUND(((0.4 * COALESCE(update_regularity_score, 0.0)) + (0.3 * COALESCE(continuity_score, 0.0)) + (0.3 * COALESCE(multi_day_score, 0.0))) * 100.0, 2) AS quality_score,\r\n",
+        "  CASE\r\n",
+        "    WHEN ((0.4 * COALESCE(update_regularity_score, 0.0)) + (0.3 * COALESCE(continuity_score, 0.0)) + (0.3 * COALESCE(multi_day_score, 0.0))) * 100.0 >= 80 THEN 'Elite'\r\n",
+        "    WHEN ((0.4 * COALESCE(update_regularity_score, 0.0)) + (0.3 * COALESCE(continuity_score, 0.0)) + (0.3 * COALESCE(multi_day_score, 0.0))) * 100.0 >= 60 THEN 'Healthy'\r\n",
+        "    WHEN ((0.4 * COALESCE(update_regularity_score, 0.0)) + (0.3 * COALESCE(continuity_score, 0.0)) + (0.3 * COALESCE(multi_day_score, 0.0))) * 100.0 >= 40 THEN 'Watchlist'\r\n",
+        "    ELSE 'Critical'\r\n",
+        "  END AS quality_segment\r\n",
+        "FROM base\r\n",
+        "WHERE (\r\n",
+        "    :p_quality_segment = 'ALL'\r\n",
+        "    OR CASE\r\n",
+        "      WHEN ((0.4 * COALESCE(update_regularity_score, 0.0)) + (0.3 * COALESCE(continuity_score, 0.0)) + (0.3 * COALESCE(multi_day_score, 0.0))) * 100.0 >= 80 THEN 'Elite'\r\n",
+        "      WHEN ((0.4 * COALESCE(update_regularity_score, 0.0)) + (0.3 * COALESCE(continuity_score, 0.0)) + (0.3 * COALESCE(multi_day_score, 0.0))) * 100.0 >= 60 THEN 'Healthy'\r\n",
+        "      WHEN ((0.4 * COALESCE(update_regularity_score, 0.0)) + (0.3 * COALESCE(continuity_score, 0.0)) + (0.3 * COALESCE(multi_day_score, 0.0))) * 100.0 >= 40 THEN 'Watchlist'\r\n",
+        "      ELSE 'Critical'\r\n",
+        "    END = :p_quality_segment\r\n",
+        "  )\r\n",
+        "ORDER BY quality_score ASC, vehicle_prefix ASC\r\n",
+        "LIMIT 500\r\n"
+      ],
+      "parameters": [
+        {
+          "displayName": "Vehicle Prefix",
+          "keyword": "p_vehicle_prefix",
+          "dataType": "STRING",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": [
+                {
+                  "value": "ALL"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "displayName": "Quality Segment",
+          "keyword": "p_quality_segment",
+          "dataType": "STRING",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": [
+                {
+                  "value": "ALL"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "f606g707",
+      "displayName": "vehicle_prefix_options",
+      "queryLines": [
+        "SELECT\r\n",
+        "  vehicle_prefix\r\n",
+        "FROM (\r\n",
+        "  SELECT 'ALL' AS vehicle_prefix, 0 AS sort_order\r\n",
+        "  UNION ALL\r\n",
+        "  SELECT DISTINCT CAST(vehicle_prefix AS STRING) AS vehicle_prefix, 1 AS sort_order\r\n",
+        "  FROM main.gold.gold_vehicle_update_frequency\r\n",
+        "  WHERE vehicle_prefix IS NOT NULL\r\n",
+        ") options\r\n",
+        "ORDER BY sort_order, vehicle_prefix\r\n"
+      ]
+    },
+    {
+      "name": "g707h808",
+      "displayName": "quality_segment_options",
+      "queryLines": [
+        "SELECT quality_segment\r\n",
+        "FROM (\r\n",
+        "  SELECT 'ALL' AS quality_segment, 0 AS sort_order\r\n",
+        "  UNION ALL SELECT 'Elite' AS quality_segment, 1 AS sort_order\r\n",
+        "  UNION ALL SELECT 'Healthy' AS quality_segment, 2 AS sort_order\r\n",
+        "  UNION ALL SELECT 'Watchlist' AS quality_segment, 3 AS sort_order\r\n",
+        "  UNION ALL SELECT 'Critical' AS quality_segment, 4 AS sort_order\r\n",
+        ") options\r\n",
+        "ORDER BY sort_order, quality_segment\r\n"
+      ]
+    }
+  ],
+  "pages": [
+    {
+      "name": "h808i909",
+      "displayName": "Executive Overview",
+      "layout": [
+        {
+          "widget": {
+            "name": "vehicles-count",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "a101b202",
+                  "fields": [
+                    {
+                      "name": "vehicles_count",
+                      "expression": "`vehicles_count`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "showDescription": true,
+                "title": "Vehicles Count",
+                "description": "Number of vehicles included in the fleet quality segmentation."
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "vehicles_count"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 3,
+            "height": 4
+          }
+        },
+        {
+          "widget": {
+            "name": "avg-quality-score",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "a101b202",
+                  "fields": [
+                    {
+                      "name": "avg_quality_score",
+                      "expression": "`avg_quality_score`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "showDescription": true,
+                "title": "Avg Quality Score",
+                "description": "Average fleet quality score from the composite segmentation model."
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "avg_quality_score"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 3,
+            "y": 0,
+            "width": 3,
+            "height": 4
+          }
+        },
+        {
+          "widget": {
+            "name": "elite-count",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "a101b202",
+                  "fields": [
+                    {
+                      "name": "elite_count",
+                      "expression": "`elite_count`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "showDescription": true,
+                "title": "Elite Count",
+                "description": "Vehicles classified in the highest quality segment."
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "elite_count"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 0,
+            "width": 3,
+            "height": 4
+          }
+        },
+        {
+          "widget": {
+            "name": "critical-count",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "a101b202",
+                  "fields": [
+                    {
+                      "name": "critical_count",
+                      "expression": "`critical_count`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "showDescription": true,
+                "title": "Critical Count",
+                "description": "Vehicles classified in the lowest quality segment."
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "critical_count"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 9,
+            "y": 0,
+            "width": 3,
+            "height": 4
+          }
+        },
+        {
+          "widget": {
+            "name": "best-quality-vehicles",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "c303d404",
+                  "fields": [
+                    {
+                      "name": "vehicle_prefix",
+                      "expression": "`vehicle_prefix`"
+                    },
+                    {
+                      "name": "quality_score",
+                      "expression": "`quality_score`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Best Quality Vehicles"
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "vehicle_prefix",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "quality_score",
+                  "axis": {
+                    "title": "Quality Score"
+                  },
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 4,
+            "width": 12,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "worst-quality-vehicles",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "d404e505",
+                  "fields": [
+                    {
+                      "name": "vehicle_prefix",
+                      "expression": "`vehicle_prefix`"
+                    },
+                    {
+                      "name": "quality_score",
+                      "expression": "`quality_score`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Worst Quality Vehicles"
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "vehicle_prefix",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "quality_score",
+                  "axis": {
+                    "title": "Quality Score"
+                  },
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 10,
+            "width": 12,
+            "height": 6
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layoutVersion": "GRID_V1"
+    },
+    {
+      "name": "i909j010",
+      "displayName": "Segmentation and Detail",
+      "layout": [
+        {
+          "widget": {
+            "name": "quality-segmentation-scatter",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "b202c303",
+                  "fields": [
+                    {
+                      "name": "quality_segment",
+                      "expression": "`quality_segment`"
+                    },
+                    {
+                      "name": "avg_update_interval_seconds",
+                      "expression": "`avg_update_interval_seconds`"
+                    },
+                    {
+                      "name": "continuity_support_ratio",
+                      "expression": "`continuity_support_ratio`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Update Regularity vs Continuity"
+              },
+              "widgetType": "scatter",
+              "encodings": {
+                "x": {
+                  "fieldName": "avg_update_interval_seconds",
+                  "axis": {
+                    "title": "Avg Update Interval (Sec)"
+                  },
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "y": {
+                  "fieldName": "continuity_support_ratio",
+                  "axis": {
+                    "title": "Continuity Support Ratio"
+                  },
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "quality_segment",
+                  "legend": {
+                    "title": "Quality Segment"
+                  },
+                  "scale": {
+                    "type": "categorical",
+                    "mappings": [
+                      {
+                        "value": "Elite",
+                        "color": {
+                          "themeColorType": "visualizationColors",
+                          "position": 2
+                        }
+                      },
+                      {
+                        "value": "Healthy",
+                        "color": {
+                          "themeColorType": "visualizationColors",
+                          "position": 7
+                        }
+                      },
+                      {
+                        "value": "Watchlist",
+                        "color": {
+                          "themeColorType": "visualizationColors",
+                          "position": 4
+                        }
+                      },
+                      {
+                        "value": "Critical",
+                        "color": {
+                          "themeColorType": "visualizationColors",
+                          "position": 6
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 12,
+            "height": 7
+          }
+        },
+        {
+          "widget": {
+            "name": "fleet-quality-detail-table",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "e505f606",
+                  "fields": [
+                    {
+                      "name": "vehicle_prefix",
+                      "expression": "`vehicle_prefix`"
+                    },
+                    {
+                      "name": "quality_segment",
+                      "expression": "`quality_segment`"
+                    },
+                    {
+                      "name": "quality_score",
+                      "expression": "`quality_score`"
+                    },
+                    {
+                      "name": "avg_update_interval_seconds",
+                      "expression": "`avg_update_interval_seconds`"
+                    },
+                    {
+                      "name": "continuity_support_ratio",
+                      "expression": "`continuity_support_ratio`"
+                    },
+                    {
+                      "name": "date_presence_ratio",
+                      "expression": "`date_presence_ratio`"
+                    },
+                    {
+                      "name": "large_gaps_count",
+                      "expression": "`large_gaps_count`"
+                    },
+                    {
+                      "name": "missing_dates_within_span_count",
+                      "expression": "`missing_dates_within_span_count`"
+                    },
+                    {
+                      "name": "max_gap_seconds",
+                      "expression": "`max_gap_seconds`"
+                    },
+                    {
+                      "name": "max_consecutive_missing_dates_within_span",
+                      "expression": "`max_consecutive_missing_dates_within_span`"
+                    },
+                    {
+                      "name": "measured_intervals_count",
+                      "expression": "`measured_intervals_count`"
+                    },
+                    {
+                      "name": "total_observations_count",
+                      "expression": "`total_observations_count`"
+                    }
+                  ],
+                  "disaggregated": true,
+                  "orders": [
+                    {
+                      "direction": "ASC",
+                      "expression": "`quality_score`"
+                    },
+                    {
+                      "direction": "ASC",
+                      "expression": "`vehicle_prefix`"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "vehicle_prefix",
+                    "displayName": "Vehicle Prefix"
+                  },
+                  {
+                    "fieldName": "quality_segment",
+                    "displayName": "Quality Segment"
+                  },
+                  {
+                    "fieldName": "quality_score",
+                    "displayName": "Quality Score"
+                  },
+                  {
+                    "fieldName": "avg_update_interval_seconds",
+                    "displayName": "Avg Update Interval (Sec)"
+                  },
+                  {
+                    "fieldName": "continuity_support_ratio",
+                    "displayName": "Continuity Support Ratio"
+                  },
+                  {
+                    "fieldName": "date_presence_ratio",
+                    "displayName": "Date Presence Ratio"
+                  },
+                  {
+                    "fieldName": "large_gaps_count",
+                    "displayName": "Large Gaps Count"
+                  },
+                  {
+                    "fieldName": "missing_dates_within_span_count",
+                    "displayName": "Missing Dates Within Span"
+                  },
+                  {
+                    "fieldName": "max_gap_seconds",
+                    "displayName": "Max Gap (Sec)"
+                  },
+                  {
+                    "fieldName": "max_consecutive_missing_dates_within_span",
+                    "displayName": "Max Consecutive Missing Dates"
+                  },
+                  {
+                    "fieldName": "measured_intervals_count",
+                    "displayName": "Measured Intervals Count"
+                  },
+                  {
+                    "fieldName": "total_observations_count",
+                    "displayName": "Total Observations Count"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 7,
+            "width": 12,
+            "height": 7
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layoutVersion": "GRID_V1"
+    },
+    {
+      "name": "j010k111",
+      "displayName": "Global Filters",
+      "layout": [
+        {
+          "widget": {
+            "name": "vehicle-prefix",
+            "queries": [
+              {
+                "name": "dashboards/fleet_quality_segmentation/datasets/vehicle_prefix_options_vehicle_prefix",
+                "query": {
+                  "datasetName": "f606g707",
+                  "fields": [
+                    {
+                      "name": "vehicle_prefix",
+                      "expression": "`vehicle_prefix`"
+                    },
+                    {
+                      "name": "vehicle_prefix_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "parameter_dashboards/fleet_quality_segmentation/datasets/fleet_quality_summary_p_vehicle_prefix",
+                "query": {
+                  "datasetName": "a101b202",
+                  "parameters": [
+                    {
+                      "name": "p_vehicle_prefix",
+                      "keyword": "p_vehicle_prefix"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "parameter_dashboards/fleet_quality_segmentation/datasets/fleet_quality_scatter_p_vehicle_prefix",
+                "query": {
+                  "datasetName": "b202c303",
+                  "parameters": [
+                    {
+                      "name": "p_vehicle_prefix",
+                      "keyword": "p_vehicle_prefix"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "parameter_dashboards/fleet_quality_segmentation/datasets/fleet_quality_detail_p_vehicle_prefix",
+                "query": {
+                  "datasetName": "e505f606",
+                  "parameters": [
+                    {
+                      "name": "p_vehicle_prefix",
+                      "keyword": "p_vehicle_prefix"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Vehicle Prefix"
+              },
+              "widgetType": "filter-single-select",
+              "encodings": {
+                "fields": [
+                  {
+                    "fieldName": "vehicle_prefix",
+                    "queryName": "dashboards/fleet_quality_segmentation/datasets/vehicle_prefix_options_vehicle_prefix"
+                  },
+                  {
+                    "parameterName": "p_vehicle_prefix",
+                    "queryName": "parameter_dashboards/fleet_quality_segmentation/datasets/fleet_quality_summary_p_vehicle_prefix"
+                  },
+                  {
+                    "parameterName": "p_vehicle_prefix",
+                    "queryName": "parameter_dashboards/fleet_quality_segmentation/datasets/fleet_quality_scatter_p_vehicle_prefix"
+                  },
+                  {
+                    "parameterName": "p_vehicle_prefix",
+                    "queryName": "parameter_dashboards/fleet_quality_segmentation/datasets/fleet_quality_detail_p_vehicle_prefix"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 4,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "quality-segment",
+            "queries": [
+              {
+                "name": "dashboards/fleet_quality_segmentation/datasets/quality_segment_options_quality_segment",
+                "query": {
+                  "datasetName": "g707h808",
+                  "fields": [
+                    {
+                      "name": "quality_segment",
+                      "expression": "`quality_segment`"
+                    },
+                    {
+                      "name": "quality_segment_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "parameter_dashboards/fleet_quality_segmentation/datasets/fleet_quality_summary_p_quality_segment",
+                "query": {
+                  "datasetName": "a101b202",
+                  "parameters": [
+                    {
+                      "name": "p_quality_segment",
+                      "keyword": "p_quality_segment"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "parameter_dashboards/fleet_quality_segmentation/datasets/fleet_quality_scatter_p_quality_segment",
+                "query": {
+                  "datasetName": "b202c303",
+                  "parameters": [
+                    {
+                      "name": "p_quality_segment",
+                      "keyword": "p_quality_segment"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "parameter_dashboards/fleet_quality_segmentation/datasets/fleet_quality_detail_p_quality_segment",
+                "query": {
+                  "datasetName": "e505f606",
+                  "parameters": [
+                    {
+                      "name": "p_quality_segment",
+                      "keyword": "p_quality_segment"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Quality Segment"
+              },
+              "widgetType": "filter-single-select",
+              "encodings": {
+                "fields": [
+                  {
+                    "fieldName": "quality_segment",
+                    "queryName": "dashboards/fleet_quality_segmentation/datasets/quality_segment_options_quality_segment"
+                  },
+                  {
+                    "parameterName": "p_quality_segment",
+                    "queryName": "parameter_dashboards/fleet_quality_segmentation/datasets/fleet_quality_summary_p_quality_segment"
+                  },
+                  {
+                    "parameterName": "p_quality_segment",
+                    "queryName": "parameter_dashboards/fleet_quality_segmentation/datasets/fleet_quality_scatter_p_quality_segment"
+                  },
+                  {
+                    "parameterName": "p_quality_segment",
+                    "queryName": "parameter_dashboards/fleet_quality_segmentation/datasets/fleet_quality_detail_p_quality_segment"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 4,
+            "y": 0,
+            "width": 4,
+            "height": 1
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_GLOBAL_FILTERS",
+      "layoutVersion": "GRID_V1"
+    }
+  ],
+  "uiSettings": {
+    "theme": {
+      "widgetHeaderAlignment": "ALIGNMENT_UNSPECIFIED"
+    },
+    "applyModeEnabled": false
+  }
+}

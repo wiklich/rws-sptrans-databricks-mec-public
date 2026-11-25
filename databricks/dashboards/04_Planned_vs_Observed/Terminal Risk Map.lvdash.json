@@ -1,0 +1,1417 @@
+{
+    "datasets": [
+        {
+            "name": "a1b2c3d4",
+            "displayName": "terminal_risk_summary",
+            "queryLines": [
+                "WITH base AS (\r\n",
+                "  SELECT\r\n",
+                "    service_date,\r\n",
+                "    line_sign,\r\n",
+                "    gtfs_direction_id,\r\n",
+                "    planned_service_hours,\r\n",
+                "    missed_service_windows,\r\n",
+                "    avg_planned_headway_minutes,\r\n",
+                "    avg_headway_deviation_minutes\r\n",
+                "  FROM main.gold.gold_terminal_risk_daily\r\n",
+                "  WHERE (\r\n",
+                "      :p_service_date_range.min IS NULL\r\n",
+                "      OR :p_service_date_range.max IS NULL\r\n",
+                "      OR service_date BETWEEN CAST(:p_service_date_range.min AS DATE)\r\n",
+                "                          AND CAST(:p_service_date_range.max AS DATE)\r\n",
+                "    )\r\n",
+                "    AND (\r\n",
+                "      :p_line_sign = 'ALL'\r\n",
+                "      OR line_sign = :p_line_sign\r\n",
+                "    )\r\n",
+                "    AND (\r\n",
+                "      :p_gtfs_direction_id = 'ALL'\r\n",
+                "      OR CAST(gtfs_direction_id AS STRING) = :p_gtfs_direction_id\r\n",
+                "    )\r\n",
+                "  GROUP BY\r\n",
+                "    service_date,\r\n",
+                "    line_sign,\r\n",
+                "    gtfs_direction_id,\r\n",
+                "    planned_service_hours,\r\n",
+                "    missed_service_windows,\r\n",
+                "    avg_planned_headway_minutes,\r\n",
+                "    avg_headway_deviation_minutes\r\n",
+                ")\r\n",
+                "SELECT\r\n",
+                "  MAX(service_date) AS latest_service_date,\r\n",
+                "  COUNT(DISTINCT line_sign) AS affected_lines,\r\n",
+                "  COUNT(DISTINCT CONCAT_WS('_', line_sign, CAST(gtfs_direction_id AS STRING))) AS affected_line_directions,\r\n",
+                "  SUM(planned_service_hours) AS planned_service_hours,\r\n",
+                "  SUM(missed_service_windows) AS missed_service_windows,\r\n",
+                "  AVG(avg_planned_headway_minutes) AS avg_planned_headway_minutes,\r\n",
+                "  AVG(avg_headway_deviation_minutes) AS avg_headway_deviation_minutes\r\n",
+                "FROM base\r\n"
+            ],
+            "parameters": [
+                {
+                    "displayName": "Service Date Range",
+                    "keyword": "p_service_date_range",
+                    "dataType": "DATE",
+                    "complexType": "RANGE",
+                    "defaultSelection": {
+                        "range": {
+                            "dataType": "DATE"
+                        }
+                    }
+                },
+                {
+                    "displayName": "Line Sign",
+                    "keyword": "p_line_sign",
+                    "dataType": "STRING",
+                    "defaultSelection": {
+                        "values": {
+                            "dataType": "STRING",
+                            "values": [
+                                {
+                                    "value": "ALL"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "displayName": "GTFS Direction",
+                    "keyword": "p_gtfs_direction_id",
+                    "dataType": "STRING",
+                    "defaultSelection": {
+                        "values": {
+                            "dataType": "STRING",
+                            "values": [
+                                {
+                                    "value": "ALL"
+                                }
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "b2c3d4e5",
+            "displayName": "terminal_risk_map",
+            "queryLines": [
+                "WITH period_base AS (\r\n",
+                "  SELECT\r\n",
+                "    line_sign,\r\n",
+                "    route_id,\r\n",
+                "    route_long_name,\r\n",
+                "    route_name_display,\r\n",
+                "    gtfs_direction_id,\r\n",
+                "    direction_description,\r\n",
+                "    trip_headsign_reference AS trip_headsign,\r\n",
+                "    terminal_role,\r\n",
+                "    stop_id,\r\n",
+                "    stop_name,\r\n",
+                "    latitude,\r\n",
+                "    longitude,\r\n",
+                "    service_date,\r\n",
+                "    planned_service_hours,\r\n",
+                "    observed_service_hours,\r\n",
+                "    missed_service_windows,\r\n",
+                "    avg_planned_headway_minutes,\r\n",
+                "    avg_headway_deviation_minutes\r\n",
+                "  FROM main.gold.gold_terminal_risk_daily\r\n",
+                "  WHERE (\r\n",
+                "      :p_service_date_range.min IS NULL\r\n",
+                "      OR :p_service_date_range.max IS NULL\r\n",
+                "      OR service_date BETWEEN CAST(:p_service_date_range.min AS DATE)\r\n",
+                "                          AND CAST(:p_service_date_range.max AS DATE)\r\n",
+                "    )\r\n",
+                "    AND (\r\n",
+                "      :p_line_sign = 'ALL'\r\n",
+                "      OR line_sign = :p_line_sign\r\n",
+                "    )\r\n",
+                "    AND (\r\n",
+                "      :p_gtfs_direction_id = 'ALL'\r\n",
+                "      OR CAST(gtfs_direction_id AS STRING) = :p_gtfs_direction_id\r\n",
+                "    )\r\n",
+                "    AND (\r\n",
+                "      :p_terminal_role = 'ALL'\r\n",
+                "      OR terminal_role = :p_terminal_role\r\n",
+                "    )\r\n",
+                "),\r\n",
+                "aggregated AS (\r\n",
+                "  SELECT\r\n",
+                "    line_sign,\r\n",
+                "    route_id,\r\n",
+                "    route_long_name,\r\n",
+                "    route_name_display,\r\n",
+                "    gtfs_direction_id,\r\n",
+                "    direction_description,\r\n",
+                "    trip_headsign,\r\n",
+                "    terminal_role,\r\n",
+                "    stop_id,\r\n",
+                "    stop_name,\r\n",
+                "    latitude,\r\n",
+                "    longitude,\r\n",
+                "    COUNT(DISTINCT service_date) AS affected_service_days,\r\n",
+                "    SUM(planned_service_hours) AS planned_service_hours,\r\n",
+                "    SUM(observed_service_hours) AS observed_service_hours,\r\n",
+                "    SUM(missed_service_windows) AS missed_service_windows,\r\n",
+                "    CASE\r\n",
+                "      WHEN SUM(planned_service_hours) = 0 THEN NULL\r\n",
+                "      ELSE SUM(missed_service_windows) * 1.0 / SUM(planned_service_hours)\r\n",
+                "    END AS missed_service_rate,\r\n",
+                "    CASE\r\n",
+                "      WHEN SUM(planned_service_hours) = 0 THEN NULL\r\n",
+                "      ELSE SUM(COALESCE(avg_planned_headway_minutes, 0.0) * planned_service_hours) * 1.0 / SUM(planned_service_hours)\r\n",
+                "    END AS avg_planned_headway_minutes,\r\n",
+                "    CASE\r\n",
+                "      WHEN SUM(planned_service_hours) = 0 THEN NULL\r\n",
+                "      ELSE SUM(COALESCE(avg_headway_deviation_minutes, 0.0) * planned_service_hours) * 1.0 / SUM(planned_service_hours)\r\n",
+                "    END AS avg_headway_deviation_minutes\r\n",
+                "  FROM period_base\r\n",
+                "  GROUP BY\r\n",
+                "    line_sign,\r\n",
+                "    route_id,\r\n",
+                "    route_long_name,\r\n",
+                "    route_name_display,\r\n",
+                "    gtfs_direction_id,\r\n",
+                "    direction_description,\r\n",
+                "    trip_headsign,\r\n",
+                "    terminal_role,\r\n",
+                "    stop_id,\r\n",
+                "    stop_name,\r\n",
+                "    latitude,\r\n",
+                "    longitude\r\n",
+                ")\r\n",
+                "SELECT\r\n",
+                "  latitude,\r\n",
+                "  longitude,\r\n",
+                "  line_sign,\r\n",
+                "  route_long_name,\r\n",
+                "  gtfs_direction_id,\r\n",
+                "  trip_headsign,\r\n",
+                "  terminal_role,\r\n",
+                "  stop_id,\r\n",
+                "  stop_name,\r\n",
+                "  affected_service_days,\r\n",
+                "  planned_service_hours,\r\n",
+                "  missed_service_windows,\r\n",
+                "  missed_service_rate,\r\n",
+                "  avg_planned_headway_minutes,\r\n",
+                "  avg_headway_deviation_minutes,\r\n",
+                "  CASE\r\n",
+                "    WHEN COALESCE(missed_service_rate, 0) >= 0.40 OR COALESCE(avg_headway_deviation_minutes, 0) >= 10 THEN 'High'\r\n",
+                "    WHEN COALESCE(missed_service_rate, 0) >= 0.15 OR COALESCE(avg_headway_deviation_minutes, 0) >= 3 THEN 'Moderate'\r\n",
+                "    ELSE 'Low'\r\n",
+                "  END AS terminal_risk_band\r\n",
+                "FROM aggregated\r\n",
+                "ORDER BY missed_service_windows DESC, line_sign ASC, terminal_role ASC\r\n"
+            ],
+            "parameters": [
+                {
+                    "displayName": "Service Date Range",
+                    "keyword": "p_service_date_range",
+                    "dataType": "DATE",
+                    "complexType": "RANGE",
+                    "defaultSelection": {
+                        "range": {
+                            "dataType": "DATE"
+                        }
+                    }
+                },
+                {
+                    "displayName": "Line Sign",
+                    "keyword": "p_line_sign",
+                    "dataType": "STRING",
+                    "defaultSelection": {
+                        "values": {
+                            "dataType": "STRING",
+                            "values": [
+                                {
+                                    "value": "ALL"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "displayName": "GTFS Direction",
+                    "keyword": "p_gtfs_direction_id",
+                    "dataType": "STRING",
+                    "defaultSelection": {
+                        "values": {
+                            "dataType": "STRING",
+                            "values": [
+                                {
+                                    "value": "ALL"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "displayName": "Terminal Role",
+                    "keyword": "p_terminal_role",
+                    "dataType": "STRING",
+                    "defaultSelection": {
+                        "values": {
+                            "dataType": "STRING",
+                            "values": [
+                                {
+                                    "value": "ALL"
+                                }
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "c3d4e5f6",
+            "displayName": "terminal_risk_table",
+            "queryLines": [
+                "WITH period_base AS (\r\n",
+                "  SELECT\r\n",
+                "    line_sign,\r\n",
+                "    route_id,\r\n",
+                "    route_long_name,\r\n",
+                "    route_name_display,\r\n",
+                "    gtfs_direction_id,\r\n",
+                "    direction_description,\r\n",
+                "    trip_headsign_reference AS trip_headsign,\r\n",
+                "    terminal_role,\r\n",
+                "    stop_name,\r\n",
+                "    service_date,\r\n",
+                "    planned_service_hours,\r\n",
+                "    observed_service_hours,\r\n",
+                "    missed_service_windows,\r\n",
+                "    avg_planned_headway_minutes,\r\n",
+                "    avg_headway_deviation_minutes\r\n",
+                "  FROM main.gold.gold_terminal_risk_daily\r\n",
+                "  WHERE (\r\n",
+                "      :p_service_date_range.min IS NULL\r\n",
+                "      OR :p_service_date_range.max IS NULL\r\n",
+                "      OR service_date BETWEEN CAST(:p_service_date_range.min AS DATE)\r\n",
+                "                          AND CAST(:p_service_date_range.max AS DATE)\r\n",
+                "    )\r\n",
+                "    AND (\r\n",
+                "      :p_line_sign = 'ALL'\r\n",
+                "      OR line_sign = :p_line_sign\r\n",
+                "    )\r\n",
+                "    AND (\r\n",
+                "      :p_gtfs_direction_id = 'ALL'\r\n",
+                "      OR CAST(gtfs_direction_id AS STRING) = :p_gtfs_direction_id\r\n",
+                "    )\r\n",
+                "    AND (\r\n",
+                "      :p_terminal_role = 'ALL'\r\n",
+                "      OR terminal_role = :p_terminal_role\r\n",
+                "    )\r\n",
+                "),\r\n",
+                "aggregated AS (\r\n",
+                "  SELECT\r\n",
+                "    line_sign,\r\n",
+                "    route_id,\r\n",
+                "    route_long_name,\r\n",
+                "    route_name_display,\r\n",
+                "    gtfs_direction_id,\r\n",
+                "    direction_description,\r\n",
+                "    trip_headsign,\r\n",
+                "    terminal_role,\r\n",
+                "    stop_name,\r\n",
+                "    COUNT(DISTINCT service_date) AS affected_service_days,\r\n",
+                "    SUM(planned_service_hours) AS planned_service_hours,\r\n",
+                "    SUM(observed_service_hours) AS observed_service_hours,\r\n",
+                "    SUM(missed_service_windows) AS missed_service_windows,\r\n",
+                "    CASE\r\n",
+                "      WHEN SUM(planned_service_hours) = 0 THEN NULL\r\n",
+                "      ELSE SUM(missed_service_windows) * 1.0 / SUM(planned_service_hours)\r\n",
+                "    END AS missed_service_rate,\r\n",
+                "    CASE\r\n",
+                "      WHEN SUM(planned_service_hours) = 0 THEN NULL\r\n",
+                "      ELSE SUM(COALESCE(avg_planned_headway_minutes, 0.0) * planned_service_hours) * 1.0 / SUM(planned_service_hours)\r\n",
+                "    END AS avg_planned_headway_minutes,\r\n",
+                "    CASE\r\n",
+                "      WHEN SUM(planned_service_hours) = 0 THEN NULL\r\n",
+                "      ELSE SUM(COALESCE(avg_headway_deviation_minutes, 0.0) * planned_service_hours) * 1.0 / SUM(planned_service_hours)\r\n",
+                "    END AS avg_headway_deviation_minutes\r\n",
+                "  FROM period_base\r\n",
+                "  GROUP BY\r\n",
+                "    line_sign,\r\n",
+                "    route_id,\r\n",
+                "    route_long_name,\r\n",
+                "    route_name_display,\r\n",
+                "    gtfs_direction_id,\r\n",
+                "    direction_description,\r\n",
+                "    trip_headsign,\r\n",
+                "    terminal_role,\r\n",
+                "    stop_name\r\n",
+                ")\r\n",
+                "SELECT\r\n",
+                "  line_sign,\r\n",
+                "  route_long_name,\r\n",
+                "  gtfs_direction_id,\r\n",
+                "  trip_headsign,\r\n",
+                "  terminal_role,\r\n",
+                "  stop_name,\r\n",
+                "  affected_service_days,\r\n",
+                "  planned_service_hours,\r\n",
+                "  missed_service_windows,\r\n",
+                "  missed_service_rate,\r\n",
+                "  avg_planned_headway_minutes,\r\n",
+                "  avg_headway_deviation_minutes,\r\n",
+                "  CASE\r\n",
+                "    WHEN COALESCE(missed_service_rate, 0) >= 0.40 OR COALESCE(avg_headway_deviation_minutes, 0) >= 10 THEN 'High'\r\n",
+                "    WHEN COALESCE(missed_service_rate, 0) >= 0.15 OR COALESCE(avg_headway_deviation_minutes, 0) >= 3 THEN 'Moderate'\r\n",
+                "    ELSE 'Low'\r\n",
+                "  END AS terminal_risk_band\r\n",
+                "FROM aggregated\r\n",
+                "ORDER BY missed_service_windows DESC, line_sign ASC, terminal_role ASC\r\n"
+            ],
+            "parameters": [
+                {
+                    "displayName": "Service Date Range",
+                    "keyword": "p_service_date_range",
+                    "dataType": "DATE",
+                    "complexType": "RANGE",
+                    "defaultSelection": {
+                        "range": {
+                            "dataType": "DATE"
+                        }
+                    }
+                },
+                {
+                    "displayName": "Line Sign",
+                    "keyword": "p_line_sign",
+                    "dataType": "STRING",
+                    "defaultSelection": {
+                        "values": {
+                            "dataType": "STRING",
+                            "values": [
+                                {
+                                    "value": "ALL"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "displayName": "GTFS Direction",
+                    "keyword": "p_gtfs_direction_id",
+                    "dataType": "STRING",
+                    "defaultSelection": {
+                        "values": {
+                            "dataType": "STRING",
+                            "values": [
+                                {
+                                    "value": "ALL"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "displayName": "Terminal Role",
+                    "keyword": "p_terminal_role",
+                    "dataType": "STRING",
+                    "defaultSelection": {
+                        "values": {
+                            "dataType": "STRING",
+                            "values": [
+                                {
+                                    "value": "ALL"
+                                }
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "d4e5f607",
+            "displayName": "line_options",
+            "queryLines": [
+                "SELECT\r\n",
+                "  line_sign\r\n",
+                "FROM (\r\n",
+                "  SELECT 'ALL' AS line_sign, 0 AS sort_order\r\n",
+                "  UNION ALL\r\n",
+                "  SELECT DISTINCT line_sign AS line_sign, 1 AS sort_order\r\n",
+                "  FROM main.gold.gold_terminal_risk_daily\r\n",
+                "  WHERE (\r\n",
+                "      :p_service_date_range.min IS NULL\r\n",
+                "      OR :p_service_date_range.max IS NULL\r\n",
+                "      OR service_date BETWEEN CAST(:p_service_date_range.min AS DATE)\r\n",
+                "                          AND CAST(:p_service_date_range.max AS DATE)\r\n",
+                "    )\r\n",
+                "    AND line_sign IS NOT NULL\r\n",
+                "    AND TRIM(line_sign) <> ''\r\n",
+                ") options\r\n",
+                "ORDER BY sort_order, line_sign\r\n"
+            ],
+            "parameters": [
+                {
+                    "displayName": "Service Date Range",
+                    "keyword": "p_service_date_range",
+                    "dataType": "DATE",
+                    "complexType": "RANGE",
+                    "defaultSelection": {
+                        "range": {
+                            "dataType": "DATE"
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "e5f60718",
+            "displayName": "direction_options",
+            "queryLines": [
+                "SELECT\r\n",
+                "  gtfs_direction_id\r\n",
+                "FROM (\r\n",
+                "  SELECT 'ALL' AS gtfs_direction_id, 0 AS sort_order\r\n",
+                "  UNION ALL\r\n",
+                "  SELECT DISTINCT CAST(gtfs_direction_id AS STRING) AS gtfs_direction_id, 1 AS sort_order\r\n",
+                "  FROM main.gold.gold_terminal_risk_daily\r\n",
+                "  WHERE gtfs_direction_id IS NOT NULL\r\n",
+                ") options\r\n",
+                "ORDER BY sort_order, gtfs_direction_id\r\n"
+            ],
+            "parameters": []
+        },
+        {
+            "name": "f6071829",
+            "displayName": "terminal_role_options",
+            "queryLines": [
+                "SELECT\r\n",
+                "  terminal_role\r\n",
+                "FROM (\r\n",
+                "  SELECT 'ALL' AS terminal_role, 0 AS sort_order\r\n",
+                "  UNION ALL\r\n",
+                "  SELECT 'ORIGIN' AS terminal_role, 1 AS sort_order\r\n",
+                "  UNION ALL\r\n",
+                "  SELECT 'DESTINATION' AS terminal_role, 2 AS sort_order\r\n",
+                ") options\r\n",
+                "ORDER BY sort_order, terminal_role\r\n"
+            ],
+            "parameters": []
+        }
+    ],
+    "pages": [
+        {
+            "name": "0718293a",
+            "displayName": "Terminal Risk Map",
+            "layout": [
+                {
+                    "widget": {
+                        "name": "affected-lines",
+                        "queries": [
+                            {
+                                "name": "main_query",
+                                "query": {
+                                    "datasetName": "a1b2c3d4",
+                                    "fields": [
+                                        {
+                                            "name": "latest_service_date",
+                                            "expression": "`latest_service_date`"
+                                        },
+                                        {
+                                            "name": "affected_lines",
+                                            "expression": "`affected_lines`"
+                                        }
+                                    ],
+                                    "disaggregated": true,
+                                    "orders": [
+                                        {
+                                            "direction": "DESC",
+                                            "expression": "`latest_service_date`"
+                                        }
+                                    ]
+                                }
+                            }
+                        ],
+                        "spec": {
+                            "version": 2,
+                            "frame": {
+                                "showTitle": true,
+                                "title": "Affected Lines",
+                                "headerAlignment": "center"
+                            },
+                            "widgetType": "counter",
+                            "encodings": {
+                                "value": {
+                                    "fieldName": "affected_lines"
+                                },
+                                "period": {
+                                    "fieldName": "latest_service_date"
+                                }
+                            }
+                        }
+                    },
+                    "position": {
+                        "x": 0,
+                        "y": 0,
+                        "width": 3,
+                        "height": 2
+                    }
+                },
+                {
+                    "widget": {
+                        "name": "affected-line-directions",
+                        "queries": [
+                            {
+                                "name": "main_query",
+                                "query": {
+                                    "datasetName": "a1b2c3d4",
+                                    "fields": [
+                                        {
+                                            "name": "latest_service_date",
+                                            "expression": "`latest_service_date`"
+                                        },
+                                        {
+                                            "name": "affected_line_directions",
+                                            "expression": "`affected_line_directions`"
+                                        }
+                                    ],
+                                    "disaggregated": true,
+                                    "orders": [
+                                        {
+                                            "direction": "DESC",
+                                            "expression": "`latest_service_date`"
+                                        }
+                                    ]
+                                }
+                            }
+                        ],
+                        "spec": {
+                            "version": 2,
+                            "frame": {
+                                "showTitle": true,
+                                "title": "Affected Line-Directions",
+                                "headerAlignment": "center"
+                            },
+                            "widgetType": "counter",
+                            "encodings": {
+                                "value": {
+                                    "fieldName": "affected_line_directions"
+                                },
+                                "period": {
+                                    "fieldName": "latest_service_date"
+                                }
+                            }
+                        }
+                    },
+                    "position": {
+                        "x": 3,
+                        "y": 0,
+                        "width": 3,
+                        "height": 2
+                    }
+                },
+                {
+                    "widget": {
+                        "name": "missed-service-windows",
+                        "queries": [
+                            {
+                                "name": "main_query",
+                                "query": {
+                                    "datasetName": "a1b2c3d4",
+                                    "fields": [
+                                        {
+                                            "name": "latest_service_date",
+                                            "expression": "`latest_service_date`"
+                                        },
+                                        {
+                                            "name": "missed_service_windows",
+                                            "expression": "`missed_service_windows`"
+                                        }
+                                    ],
+                                    "disaggregated": true,
+                                    "orders": [
+                                        {
+                                            "direction": "DESC",
+                                            "expression": "`latest_service_date`"
+                                        }
+                                    ]
+                                }
+                            }
+                        ],
+                        "spec": {
+                            "version": 2,
+                            "frame": {
+                                "showTitle": true,
+                                "title": "Missed Service Windows",
+                                "headerAlignment": "center"
+                            },
+                            "widgetType": "counter",
+                            "encodings": {
+                                "value": {
+                                    "fieldName": "missed_service_windows"
+                                },
+                                "period": {
+                                    "fieldName": "latest_service_date"
+                                }
+                            }
+                        }
+                    },
+                    "position": {
+                        "x": 6,
+                        "y": 0,
+                        "width": 3,
+                        "height": 2
+                    }
+                },
+                {
+                    "widget": {
+                        "name": "avg-headway-deviation",
+                        "queries": [
+                            {
+                                "name": "main_query",
+                                "query": {
+                                    "datasetName": "a1b2c3d4",
+                                    "fields": [
+                                        {
+                                            "name": "latest_service_date",
+                                            "expression": "`latest_service_date`"
+                                        },
+                                        {
+                                            "name": "avg_headway_deviation_minutes",
+                                            "expression": "`avg_headway_deviation_minutes`"
+                                        }
+                                    ],
+                                    "disaggregated": true,
+                                    "orders": [
+                                        {
+                                            "direction": "DESC",
+                                            "expression": "`latest_service_date`"
+                                        }
+                                    ]
+                                }
+                            }
+                        ],
+                        "spec": {
+                            "version": 2,
+                            "frame": {
+                                "showTitle": true,
+                                "title": "Avg Headway Deviation (Min)",
+                                "headerAlignment": "center"
+                            },
+                            "widgetType": "counter",
+                            "encodings": {
+                                "value": {
+                                    "fieldName": "avg_headway_deviation_minutes"
+                                },
+                                "period": {
+                                    "fieldName": "latest_service_date"
+                                }
+                            }
+                        }
+                    },
+                    "position": {
+                        "x": 9,
+                        "y": 0,
+                        "width": 3,
+                        "height": 2
+                    }
+                },
+                {
+                    "widget": {
+                        "name": "terminal-risk-map",
+                        "queries": [
+                            {
+                                "name": "main_query",
+                                "query": {
+                                    "datasetName": "b2c3d4e5",
+                                    "fields": [
+                                        {
+                                            "name": "terminal_risk_band",
+                                            "expression": "`terminal_risk_band`"
+                                        },
+                                        {
+                                            "name": "latitude",
+                                            "expression": "`latitude`"
+                                        },
+                                        {
+                                            "name": "longitude",
+                                            "expression": "`longitude`"
+                                        },
+                                        {
+                                            "name": "line_sign",
+                                            "expression": "`line_sign`"
+                                        },
+                                        {
+                                            "name": "route_long_name",
+                                            "expression": "`route_long_name`"
+                                        },
+                                        {
+                                            "name": "gtfs_direction_id",
+                                            "expression": "`gtfs_direction_id`"
+                                        },
+                                        {
+                                            "name": "trip_headsign",
+                                            "expression": "`trip_headsign`"
+                                        },
+                                        {
+                                            "name": "terminal_role",
+                                            "expression": "`terminal_role`"
+                                        },
+                                        {
+                                            "name": "stop_id",
+                                            "expression": "`stop_id`"
+                                        },
+                                        {
+                                            "name": "stop_name",
+                                            "expression": "`stop_name`"
+                                        },
+                                        {
+                                            "name": "affected_service_days",
+                                            "expression": "`affected_service_days`"
+                                        },
+                                        {
+                                            "name": "planned_service_hours",
+                                            "expression": "`planned_service_hours`"
+                                        },
+                                        {
+                                            "name": "missed_service_windows",
+                                            "expression": "`missed_service_windows`"
+                                        },
+                                        {
+                                            "name": "missed_service_rate",
+                                            "expression": "`missed_service_rate`"
+                                        },
+                                        {
+                                            "name": "avg_planned_headway_minutes",
+                                            "expression": "`avg_planned_headway_minutes`"
+                                        },
+                                        {
+                                            "name": "avg_headway_deviation_minutes",
+                                            "expression": "`avg_headway_deviation_minutes`"
+                                        }
+                                    ],
+                                    "disaggregated": true
+                                }
+                            }
+                        ],
+                        "spec": {
+                            "version": 2,
+                            "widgetType": "symbol-map",
+                            "encodings": {
+                                "coordinates": {
+                                    "latitude": {
+                                        "fieldName": "latitude"
+                                    },
+                                    "longitude": {
+                                        "fieldName": "longitude"
+                                    }
+                                },
+                                "color": {
+                                    "fieldName": "terminal_risk_band",
+                                    "legend": {
+                                        "title": "Terminal Risk"
+                                    },
+                                    "scale": {
+                                        "type": "categorical",
+                                        "mappings": [
+                                            {
+                                                "value": "High",
+                                                "color": {
+                                                    "themeColorType": "visualizationColors",
+                                                    "position": 0
+                                                }
+                                            },
+                                            {
+                                                "value": "Moderate",
+                                                "color": {
+                                                    "themeColorType": "visualizationColors",
+                                                    "position": 4
+                                                }
+                                            },
+                                            {
+                                                "value": "Low",
+                                                "color": {
+                                                    "themeColorType": "visualizationColors",
+                                                    "position": 2
+                                                }
+                                            }
+                                        ]
+                                    }
+                                },
+                                "extra": [
+                                    {
+                                        "fieldName": "line_sign"
+                                    },
+                                    {
+                                        "fieldName": "route_long_name"
+                                    },
+                                    {
+                                        "fieldName": "gtfs_direction_id"
+                                    },
+                                    {
+                                        "fieldName": "trip_headsign"
+                                    },
+                                    {
+                                        "fieldName": "terminal_role"
+                                    },
+                                    {
+                                        "fieldName": "stop_id"
+                                    },
+                                    {
+                                        "fieldName": "stop_name"
+                                    },
+                                    {
+                                        "fieldName": "affected_service_days"
+                                    },
+                                    {
+                                        "fieldName": "planned_service_hours"
+                                    },
+                                    {
+                                        "fieldName": "missed_service_windows"
+                                    },
+                                    {
+                                        "fieldName": "missed_service_rate"
+                                    },
+                                    {
+                                        "fieldName": "avg_planned_headway_minutes"
+                                    },
+                                    {
+                                        "fieldName": "avg_headway_deviation_minutes"
+                                    }
+                                ]
+                            }
+                        }
+                    },
+                    "position": {
+                        "x": 0,
+                        "y": 2,
+                        "width": 12,
+                        "height": 10
+                    }
+                },
+                {
+                    "widget": {
+                        "name": "terminal-risk-table",
+                        "queries": [
+                            {
+                                "name": "main_query",
+                                "query": {
+                                    "datasetName": "c3d4e5f6",
+                                    "fields": [
+                                        {
+                                            "name": "line_sign",
+                                            "expression": "`line_sign`"
+                                        },
+                                        {
+                                            "name": "route_long_name",
+                                            "expression": "`route_long_name`"
+                                        },
+                                        {
+                                            "name": "gtfs_direction_id",
+                                            "expression": "`gtfs_direction_id`"
+                                        },
+                                        {
+                                            "name": "trip_headsign",
+                                            "expression": "`trip_headsign`"
+                                        },
+                                        {
+                                            "name": "terminal_role",
+                                            "expression": "`terminal_role`"
+                                        },
+                                        {
+                                            "name": "stop_name",
+                                            "expression": "`stop_name`"
+                                        },
+                                        {
+                                            "name": "affected_service_days",
+                                            "expression": "`affected_service_days`"
+                                        },
+                                        {
+                                            "name": "planned_service_hours",
+                                            "expression": "`planned_service_hours`"
+                                        },
+                                        {
+                                            "name": "missed_service_windows",
+                                            "expression": "`missed_service_windows`"
+                                        },
+                                        {
+                                            "name": "missed_service_rate",
+                                            "expression": "`missed_service_rate`"
+                                        },
+                                        {
+                                            "name": "avg_planned_headway_minutes",
+                                            "expression": "`avg_planned_headway_minutes`"
+                                        },
+                                        {
+                                            "name": "avg_headway_deviation_minutes",
+                                            "expression": "`avg_headway_deviation_minutes`"
+                                        },
+                                        {
+                                            "name": "terminal_risk_band",
+                                            "expression": "`terminal_risk_band`"
+                                        }
+                                    ],
+                                    "disaggregated": true,
+                                    "orders": [
+                                        {
+                                            "direction": "DESC",
+                                            "expression": "`missed_service_windows`"
+                                        },
+                                        {
+                                            "direction": "ASC",
+                                            "expression": "`line_sign`"
+                                        }
+                                    ]
+                                }
+                            }
+                        ],
+                        "spec": {
+                            "version": 2,
+                            "widgetType": "table",
+                            "encodings": {
+                                "columns": [
+                                    {
+                                        "fieldName": "line_sign",
+                                        "displayName": "Line Sign"
+                                    },
+                                    {
+                                        "fieldName": "route_long_name",
+                                        "displayName": "Route Long Name"
+                                    },
+                                    {
+                                        "fieldName": "gtfs_direction_id",
+                                        "displayName": "GTFS Direction"
+                                    },
+                                    {
+                                        "fieldName": "trip_headsign",
+                                        "displayName": "Trip Headsign"
+                                    },
+                                    {
+                                        "fieldName": "terminal_role",
+                                        "displayName": "Terminal Role"
+                                    },
+                                    {
+                                        "fieldName": "stop_name",
+                                        "displayName": "Stop Name"
+                                    },
+                                    {
+                                        "fieldName": "affected_service_days",
+                                        "displayName": "Affected Service Days"
+                                    },
+                                    {
+                                        "fieldName": "planned_service_hours",
+                                        "displayName": "Planned Service Hours"
+                                    },
+                                    {
+                                        "fieldName": "missed_service_windows",
+                                        "displayName": "Missed Service Windows"
+                                    },
+                                    {
+                                        "fieldName": "missed_service_rate",
+                                        "displayName": "Missed Service Rate"
+                                    },
+                                    {
+                                        "fieldName": "avg_planned_headway_minutes",
+                                        "displayName": "Avg Planned Headway (Min)"
+                                    },
+                                    {
+                                        "fieldName": "avg_headway_deviation_minutes",
+                                        "displayName": "Avg Headway Deviation (Min)"
+                                    },
+                                    {
+                                        "fieldName": "terminal_risk_band",
+                                        "displayName": "Terminal Risk Band"
+                                    }
+                                ]
+                            }
+                        }
+                    },
+                    "position": {
+                        "x": 0,
+                        "y": 12,
+                        "width": 12,
+                        "height": 8
+                    }
+                }
+            ],
+            "pageType": "PAGE_TYPE_CANVAS",
+            "layoutVersion": "GRID_V1"
+        },
+        {
+            "name": "18293a4b",
+            "displayName": "Global Filters",
+            "layout": [
+                {
+                    "widget": {
+                        "name": "service-date-range",
+                        "queries": [
+                            {
+                                "name": "parameter_dashboards/terminal_risk_map/datasets/terminal_risk_summary_p_service_date_range",
+                                "query": {
+                                    "datasetName": "a1b2c3d4",
+                                    "parameters": [
+                                        {
+                                            "name": "p_service_date_range",
+                                            "keyword": "p_service_date_range"
+                                        }
+                                    ],
+                                    "disaggregated": false
+                                }
+                            },
+                            {
+                                "name": "parameter_dashboards/terminal_risk_map/datasets/terminal_risk_map_p_service_date_range",
+                                "query": {
+                                    "datasetName": "b2c3d4e5",
+                                    "parameters": [
+                                        {
+                                            "name": "p_service_date_range",
+                                            "keyword": "p_service_date_range"
+                                        }
+                                    ],
+                                    "disaggregated": false
+                                }
+                            },
+                            {
+                                "name": "parameter_dashboards/terminal_risk_map/datasets/terminal_risk_table_p_service_date_range",
+                                "query": {
+                                    "datasetName": "c3d4e5f6",
+                                    "parameters": [
+                                        {
+                                            "name": "p_service_date_range",
+                                            "keyword": "p_service_date_range"
+                                        }
+                                    ],
+                                    "disaggregated": false
+                                }
+                            },
+                            {
+                                "name": "parameter_dashboards/terminal_risk_map/datasets/line_options_p_service_date_range",
+                                "query": {
+                                    "datasetName": "d4e5f607",
+                                    "parameters": [
+                                        {
+                                            "name": "p_service_date_range",
+                                            "keyword": "p_service_date_range"
+                                        }
+                                    ],
+                                    "disaggregated": false
+                                }
+                            }
+                        ],
+                        "spec": {
+                            "version": 2,
+                            "frame": {
+                                "showTitle": true,
+                                "title": "Service Date Range"
+                            },
+                            "widgetType": "filter-date-range-picker",
+                            "encodings": {
+                                "fields": [
+                                    {
+                                        "parameterName": "p_service_date_range",
+                                        "queryName": "parameter_dashboards/terminal_risk_map/datasets/terminal_risk_summary_p_service_date_range"
+                                    },
+                                    {
+                                        "parameterName": "p_service_date_range",
+                                        "queryName": "parameter_dashboards/terminal_risk_map/datasets/terminal_risk_map_p_service_date_range"
+                                    },
+                                    {
+                                        "parameterName": "p_service_date_range",
+                                        "queryName": "parameter_dashboards/terminal_risk_map/datasets/terminal_risk_table_p_service_date_range"
+                                    },
+                                    {
+                                        "parameterName": "p_service_date_range",
+                                        "queryName": "parameter_dashboards/terminal_risk_map/datasets/line_options_p_service_date_range"
+                                    }
+                                ]
+                            }
+                        }
+                    },
+                    "position": {
+                        "x": 0,
+                        "y": 0,
+                        "width": 1,
+                        "height": 2
+                    }
+                },
+                {
+                    "widget": {
+                        "name": "line-sign",
+                        "queries": [
+                            {
+                                "name": "dashboards/terminal_risk_map/datasets/line_options_line_sign",
+                                "query": {
+                                    "datasetName": "d4e5f607",
+                                    "fields": [
+                                        {
+                                            "name": "line_sign",
+                                            "expression": "`line_sign`"
+                                        },
+                                        {
+                                            "name": "line_sign_associativity",
+                                            "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                                        }
+                                    ],
+                                    "disaggregated": false
+                                }
+                            },
+                            {
+                                "name": "parameter_dashboards/terminal_risk_map/datasets/terminal_risk_summary_p_line_sign",
+                                "query": {
+                                    "datasetName": "a1b2c3d4",
+                                    "parameters": [
+                                        {
+                                            "name": "p_line_sign",
+                                            "keyword": "p_line_sign"
+                                        }
+                                    ],
+                                    "disaggregated": false
+                                }
+                            },
+                            {
+                                "name": "parameter_dashboards/terminal_risk_map/datasets/terminal_risk_map_p_line_sign",
+                                "query": {
+                                    "datasetName": "b2c3d4e5",
+                                    "parameters": [
+                                        {
+                                            "name": "p_line_sign",
+                                            "keyword": "p_line_sign"
+                                        }
+                                    ],
+                                    "disaggregated": false
+                                }
+                            },
+                            {
+                                "name": "parameter_dashboards/terminal_risk_map/datasets/terminal_risk_table_p_line_sign",
+                                "query": {
+                                    "datasetName": "c3d4e5f6",
+                                    "parameters": [
+                                        {
+                                            "name": "p_line_sign",
+                                            "keyword": "p_line_sign"
+                                        }
+                                    ],
+                                    "disaggregated": false
+                                }
+                            }
+                        ],
+                        "spec": {
+                            "version": 2,
+                            "frame": {
+                                "showTitle": true,
+                                "title": "Line Sign"
+                            },
+                            "widgetType": "filter-single-select",
+                            "encodings": {
+                                "fields": [
+                                    {
+                                        "fieldName": "line_sign",
+                                        "queryName": "dashboards/terminal_risk_map/datasets/line_options_line_sign"
+                                    },
+                                    {
+                                        "parameterName": "p_line_sign",
+                                        "queryName": "parameter_dashboards/terminal_risk_map/datasets/terminal_risk_summary_p_line_sign"
+                                    },
+                                    {
+                                        "parameterName": "p_line_sign",
+                                        "queryName": "parameter_dashboards/terminal_risk_map/datasets/terminal_risk_map_p_line_sign"
+                                    },
+                                    {
+                                        "parameterName": "p_line_sign",
+                                        "queryName": "parameter_dashboards/terminal_risk_map/datasets/terminal_risk_table_p_line_sign"
+                                    }
+                                ]
+                            }
+                        }
+                    },
+                    "position": {
+                        "x": 0,
+                        "y": 2,
+                        "width": 1,
+                        "height": 2
+                    }
+                },
+                {
+                    "widget": {
+                        "name": "gtfs-direction-id",
+                        "queries": [
+                            {
+                                "name": "dashboards/terminal_risk_map/datasets/direction_options_gtfs_direction_id",
+                                "query": {
+                                    "datasetName": "e5f60718",
+                                    "fields": [
+                                        {
+                                            "name": "gtfs_direction_id",
+                                            "expression": "`gtfs_direction_id`"
+                                        },
+                                        {
+                                            "name": "gtfs_direction_id_associativity",
+                                            "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                                        }
+                                    ],
+                                    "disaggregated": false
+                                }
+                            },
+                            {
+                                "name": "parameter_dashboards/terminal_risk_map/datasets/terminal_risk_summary_p_gtfs_direction_id",
+                                "query": {
+                                    "datasetName": "a1b2c3d4",
+                                    "parameters": [
+                                        {
+                                            "name": "p_gtfs_direction_id",
+                                            "keyword": "p_gtfs_direction_id"
+                                        }
+                                    ],
+                                    "disaggregated": false
+                                }
+                            },
+                            {
+                                "name": "parameter_dashboards/terminal_risk_map/datasets/terminal_risk_map_p_gtfs_direction_id",
+                                "query": {
+                                    "datasetName": "b2c3d4e5",
+                                    "parameters": [
+                                        {
+                                            "name": "p_gtfs_direction_id",
+                                            "keyword": "p_gtfs_direction_id"
+                                        }
+                                    ],
+                                    "disaggregated": false
+                                }
+                            },
+                            {
+                                "name": "parameter_dashboards/terminal_risk_map/datasets/terminal_risk_table_p_gtfs_direction_id",
+                                "query": {
+                                    "datasetName": "c3d4e5f6",
+                                    "parameters": [
+                                        {
+                                            "name": "p_gtfs_direction_id",
+                                            "keyword": "p_gtfs_direction_id"
+                                        }
+                                    ],
+                                    "disaggregated": false
+                                }
+                            }
+                        ],
+                        "spec": {
+                            "version": 2,
+                            "frame": {
+                                "showTitle": true,
+                                "title": "GTFS Direction"
+                            },
+                            "widgetType": "filter-single-select",
+                            "encodings": {
+                                "fields": [
+                                    {
+                                        "fieldName": "gtfs_direction_id",
+                                        "queryName": "dashboards/terminal_risk_map/datasets/direction_options_gtfs_direction_id"
+                                    },
+                                    {
+                                        "parameterName": "p_gtfs_direction_id",
+                                        "queryName": "parameter_dashboards/terminal_risk_map/datasets/terminal_risk_summary_p_gtfs_direction_id"
+                                    },
+                                    {
+                                        "parameterName": "p_gtfs_direction_id",
+                                        "queryName": "parameter_dashboards/terminal_risk_map/datasets/terminal_risk_map_p_gtfs_direction_id"
+                                    },
+                                    {
+                                        "parameterName": "p_gtfs_direction_id",
+                                        "queryName": "parameter_dashboards/terminal_risk_map/datasets/terminal_risk_table_p_gtfs_direction_id"
+                                    }
+                                ]
+                            }
+                        }
+                    },
+                    "position": {
+                        "x": 0,
+                        "y": 4,
+                        "width": 1,
+                        "height": 2
+                    }
+                },
+                {
+                    "widget": {
+                        "name": "terminal-role",
+                        "queries": [
+                            {
+                                "name": "dashboards/terminal_risk_map/datasets/terminal_role_options_terminal_role",
+                                "query": {
+                                    "datasetName": "f6071829",
+                                    "fields": [
+                                        {
+                                            "name": "terminal_role",
+                                            "expression": "`terminal_role`"
+                                        },
+                                        {
+                                            "name": "terminal_role_associativity",
+                                            "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                                        }
+                                    ],
+                                    "disaggregated": false
+                                }
+                            },
+                            {
+                                "name": "parameter_dashboards/terminal_risk_map/datasets/terminal_risk_map_p_terminal_role",
+                                "query": {
+                                    "datasetName": "b2c3d4e5",
+                                    "parameters": [
+                                        {
+                                            "name": "p_terminal_role",
+                                            "keyword": "p_terminal_role"
+                                        }
+                                    ],
+                                    "disaggregated": false
+                                }
+                            },
+                            {
+                                "name": "parameter_dashboards/terminal_risk_map/datasets/terminal_risk_table_p_terminal_role",
+                                "query": {
+                                    "datasetName": "c3d4e5f6",
+                                    "parameters": [
+                                        {
+                                            "name": "p_terminal_role",
+                                            "keyword": "p_terminal_role"
+                                        }
+                                    ],
+                                    "disaggregated": false
+                                }
+                            }
+                        ],
+                        "spec": {
+                            "version": 2,
+                            "frame": {
+                                "showTitle": true,
+                                "title": "Terminal Role"
+                            },
+                            "widgetType": "filter-single-select",
+                            "encodings": {
+                                "fields": [
+                                    {
+                                        "fieldName": "terminal_role",
+                                        "queryName": "dashboards/terminal_risk_map/datasets/terminal_role_options_terminal_role"
+                                    },
+                                    {
+                                        "parameterName": "p_terminal_role",
+                                        "queryName": "parameter_dashboards/terminal_risk_map/datasets/terminal_risk_map_p_terminal_role"
+                                    },
+                                    {
+                                        "parameterName": "p_terminal_role",
+                                        "queryName": "parameter_dashboards/terminal_risk_map/datasets/terminal_risk_table_p_terminal_role"
+                                    }
+                                ]
+                            }
+                        }
+                    },
+                    "position": {
+                        "x": 0,
+                        "y": 6,
+                        "width": 1,
+                        "height": 2
+                    }
+                }
+            ],
+            "pageType": "PAGE_TYPE_GLOBAL_FILTERS",
+            "layoutVersion": "GRID_V1"
+        }
+    ],
+    "uiSettings": {
+        "theme": {
+            "widgetHeaderAlignment": "ALIGNMENT_UNSPECIFIED"
+        },
+        "applyModeEnabled": false
+    }
+}

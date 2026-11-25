@@ -1,0 +1,24 @@
+resources:
+  pipelines:
+    etl_pipeline_gold_planned_vs_observed:
+      name: etl_pipeline_gold_planned_vs_observed
+      catalog: ${var.catalog}
+      schema: ${var.gold_schema}
+      development: true
+      continuous: false
+      channel: CURRENT
+      serverless: true
+
+      environment:
+        dependencies:
+          - ${workspace.artifact_path}/.internal/rws_sptrans_databricks_mec-0.1.0-py3-none-any.whl
+
+      libraries:
+        - glob:
+            include: ../../../src/pipelines/gold_planned_vs_observed/**
+
+      tags:
+        domain: planned_vs_observed
+        layer: gold
+        source: sptrans_gtfs_reconciliation
+        component: etl_pipeline_gold_planned_vs_observed

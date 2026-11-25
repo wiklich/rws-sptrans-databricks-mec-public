@@ -1,0 +1,81 @@
+resources:
+  dashboards:
+    fleet_quality_segmentation:
+      display_name: "Fleet Quality Segmentation"
+      file_path: ../../../databricks/dashboards/02_Observed/Fleet Quality Segmentation.lvdash.json
+      warehouse_id: ${var.warehouse_id}
+      parent_path: /Shared/sptrans/dashboards/02_Observed
+      dataset_catalog: ${var.catalog}
+      dataset_schema: ${var.gold_schema}
+
+    line_activity_explorer:
+      display_name: "Line Activity Explorer"
+      file_path: ../../../databricks/dashboards/02_Observed/Line Activity Explorer.lvdash.json
+      warehouse_id: ${var.warehouse_id}
+      parent_path: /Shared/sptrans/dashboards/02_Observed
+      dataset_catalog: ${var.catalog}
+      dataset_schema: ${var.gold_schema}
+
+    recurring_update_patterns_heatmap:
+      display_name: "Recurring Update Patterns Heatmap"
+      file_path: ../../../databricks/dashboards/02_Observed/Recurring Update Patterns Heatmap.lvdash.json
+      warehouse_id: ${var.warehouse_id}
+      parent_path: /Shared/sptrans/dashboards/02_Observed
+      dataset_catalog: ${var.catalog}
+      dataset_schema: ${var.gold_schema}
+
+    system_wide_update_behavior_overview:
+      display_name: "System-Wide Update Behavior Overview"
+      file_path: ../../../databricks/dashboards/02_Observed/System-Wide Update Behavior Overview.lvdash.json
+      warehouse_id: ${var.warehouse_id}
+      parent_path: /Shared/sptrans/dashboards/02_Observed
+      dataset_catalog: ${var.catalog}
+      dataset_schema: ${var.gold_schema}
+
+    temporal_coverage_gap_monitor:
+      display_name: "Temporal Coverage & Gap Monitor"
+      file_path: ../../../databricks/dashboards/02_Observed/Temporal Coverage & Gap Monitor.lvdash.json
+      warehouse_id: ${var.warehouse_id}
+      parent_path: /Shared/sptrans/dashboards/02_Observed
+      dataset_catalog: ${var.catalog}
+      dataset_schema: ${var.gold_schema}
+
+    vehicle_360_explorer:
+      display_name: "Vehicle 360 Explorer"
+      file_path: ../../../databricks/dashboards/02_Observed/Vehicle 360 Explorer.lvdash.json
+      warehouse_id: ${var.warehouse_id}
+      parent_path: /Shared/sptrans/dashboards/02_Observed
+      dataset_catalog: ${var.catalog}
+      dataset_schema: ${var.gold_schema}
+
+    vehicle_multi_day_continuity_explorer:
+      display_name: "Vehicle Multi-Day Continuity Explorer"
+      file_path: ../../../databricks/dashboards/02_Observed/Vehicle Multi-Day Continuity Explorer.lvdash.json
+      warehouse_id: ${var.warehouse_id}
+      parent_path: /Shared/sptrans/dashboards/02_Observed
+      dataset_catalog: ${var.catalog}
+      dataset_schema: ${var.gold_schema}
+
+    vehicle_observation_continuity_explorer:
+      display_name: "Vehicle Observation Continuity Explorer"
+      file_path: ../../../databricks/dashboards/02_Observed/Vehicle Observation Continuity Explorer.lvdash.json
+      warehouse_id: ${var.warehouse_id}
+      parent_path: /Shared/sptrans/dashboards/02_Observed
+      dataset_catalog: ${var.catalog}
+      dataset_schema: ${var.gold_schema}
+
+    vehicle_trace_explorer:
+      display_name: "Vehicle Trace Explorer"
+      file_path: ../../../databricks/dashboards/02_Observed/Vehicle Trace Explorer.lvdash.json
+      warehouse_id: ${var.warehouse_id}
+      parent_path: /Shared/sptrans/dashboards/02_Observed
+      dataset_catalog: ${var.catalog}
+      dataset_schema: ${var.gold_schema}
+
+    vehicle_update_frequency_explorer:
+      display_name: "Vehicle Update Frequency Explorer"
+      file_path: ../../../databricks/dashboards/02_Observed/Vehicle Update Frequency Explorer.lvdash.json
+      warehouse_id: ${var.warehouse_id}
+      parent_path: /Shared/sptrans/dashboards/02_Observed
+      dataset_catalog: ${var.catalog}
+      dataset_schema: ${var.gold_schema}

@@ -1,0 +1,57 @@
+resources:
+  dashboards:
+    hourly_adherence_heatmap:
+      display_name: "Hourly Adherence Heatmap"
+      file_path: ../../../databricks/dashboards/04_Planned_vs_Observed/Hourly Adherence Heatmap.lvdash.json
+      warehouse_id: ${var.warehouse_id}
+      parent_path: /Shared/sptrans/dashboards/04_Planned_vs_Observed
+      dataset_catalog: ${var.catalog}
+      dataset_schema: ${var.gold_schema}
+
+    line_explorer:
+      display_name: "Line Explorer"
+      file_path: ../../../databricks/dashboards/04_Planned_vs_Observed/Line Explorer.lvdash.json
+      warehouse_id: ${var.warehouse_id}
+      parent_path: /Shared/sptrans/dashboards/04_Planned_vs_Observed
+      dataset_catalog: ${var.catalog}
+      dataset_schema: ${var.gold_schema}
+
+    line_explorer_map:
+      display_name: "Line Explorer Map"
+      file_path: ../../../databricks/dashboards/04_Planned_vs_Observed/Line Explorer Map.lvdash.json
+      warehouse_id: ${var.warehouse_id}
+      parent_path: /Shared/sptrans/dashboards/04_Planned_vs_Observed
+      dataset_catalog: ${var.catalog}
+      dataset_schema: ${var.gold_schema}
+
+    missed_service_explorer:
+      display_name: "Missed Service Explorer"
+      file_path: ../../../databricks/dashboards/04_Planned_vs_Observed/Missed Service Explorer.lvdash.json
+      warehouse_id: ${var.warehouse_id}
+      parent_path: /Shared/sptrans/dashboards/04_Planned_vs_Observed
+      dataset_catalog: ${var.catalog}
+      dataset_schema: ${var.gold_schema}
+
+    missed_service_map:
+      display_name: "Missed Service Map"
+      file_path: ../../../databricks/dashboards/04_Planned_vs_Observed/Missed Service Map.lvdash.json
+      warehouse_id: ${var.warehouse_id}
+      parent_path: /Shared/sptrans/dashboards/04_Planned_vs_Observed
+      dataset_catalog: ${var.catalog}
+      dataset_schema: ${var.gold_schema}
+
+    route_adherence_map:
+      display_name: "Route Adherence Map"
+      file_path: ../../../databricks/dashboards/04_Planned_vs_Observed/Route Adherence Map.lvdash.json
+      warehouse_id: ${var.warehouse_id}
+      parent_path: /Shared/sptrans/dashboards/04_Planned_vs_Observed
+      dataset_catalog: ${var.catalog}
+      dataset_schema: ${var.gold_schema}
+
+    terminal_risk_map:
+      display_name: "Terminal Risk Map"
+      file_path: ../../../databricks/dashboards/04_Planned_vs_Observed/Terminal Risk Map.lvdash.json
+      warehouse_id: ${var.warehouse_id}
+      parent_path: /Shared/sptrans/dashboards/04_Planned_vs_Observed
+      dataset_catalog: ${var.catalog}
+      dataset_schema: ${var.gold_schema}

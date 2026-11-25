@@ -1,0 +1,966 @@
+{
+  "datasets": [
+    {
+      "name": "a501b602",
+      "displayName": "temporal_gap_summary",
+      "queryLines": [
+        "WITH base AS (\r\n",
+        "  SELECT\r\n",
+        "    oc.vehicle_prefix,\r\n",
+        "    oc.observations_count,\r\n",
+        "    oc.measured_gaps_count,\r\n",
+        "    oc.observed_span_seconds,\r\n",
+        "    oc.distinct_minutes_with_data,\r\n",
+        "    oc.distinct_hours_with_data,\r\n",
+        "    oc.avg_gap_seconds,\r\n",
+        "    oc.max_gap_seconds,\r\n",
+        "    oc.large_gaps_count,\r\n",
+        "    oc.continuity_support_ratio,\r\n",
+        "    md.observed_dates_count,\r\n",
+        "    md.observed_date_span_days,\r\n",
+        "    md.missing_dates_within_span_count,\r\n",
+        "    md.date_presence_ratio,\r\n",
+        "    md.total_observations_count,\r\n",
+        "    md.max_consecutive_observed_dates,\r\n",
+        "    md.max_consecutive_missing_dates_within_span\r\n",
+        "  FROM main.gold.gold_vehicle_observation_continuity oc\r\n",
+        "  INNER JOIN main.gold.gold_vehicle_multi_day_continuity md\r\n",
+        "    ON oc.vehicle_prefix = md.vehicle_prefix\r\n",
+        "  WHERE (\r\n",
+        "      :p_vehicle_prefix = 'ALL'\r\n",
+        "      OR CAST(oc.vehicle_prefix AS STRING) = :p_vehicle_prefix\r\n",
+        "    )\r\n",
+        ")\r\n",
+        "SELECT\r\n",
+        "  COUNT(*) AS vehicles_count,\r\n",
+        "  SUM(large_gaps_count) AS total_large_gaps_count,\r\n",
+        "  AVG(max_gap_seconds) AS avg_max_gap_seconds,\r\n",
+        "  AVG(continuity_support_ratio) AS avg_continuity_support_ratio,\r\n",
+        "  AVG(date_presence_ratio) AS avg_date_presence_ratio,\r\n",
+        "  AVG(missing_dates_within_span_count) AS avg_missing_dates_within_span_count,\r\n",
+        "  AVG(max_consecutive_missing_dates_within_span) AS avg_max_consecutive_missing_dates_within_span\r\n",
+        "FROM base\r\n"
+      ],
+      "parameters": [
+        {
+          "displayName": "Vehicle Prefix",
+          "keyword": "p_vehicle_prefix",
+          "dataType": "STRING",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": [
+                {
+                  "value": "ALL"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "b602c703",
+      "displayName": "top_large_gaps_vehicles",
+      "queryLines": [
+        "SELECT\r\n",
+        "  CAST(vehicle_prefix AS STRING) AS vehicle_prefix,\r\n",
+        "  observations_count,\r\n",
+        "  measured_gaps_count,\r\n",
+        "  avg_gap_seconds,\r\n",
+        "  max_gap_seconds,\r\n",
+        "  large_gaps_count,\r\n",
+        "  continuity_support_ratio,\r\n",
+        "  observed_span_seconds,\r\n",
+        "  distinct_minutes_with_data\r\n",
+        "FROM main.gold.gold_vehicle_observation_continuity\r\n",
+        "WHERE (\r\n",
+        "    :p_vehicle_prefix = 'ALL'\r\n",
+        "    OR CAST(vehicle_prefix AS STRING) = :p_vehicle_prefix\r\n",
+        "  )\r\n",
+        "ORDER BY large_gaps_count DESC, max_gap_seconds DESC, vehicle_prefix ASC\r\n",
+        "LIMIT 15\r\n"
+      ],
+      "parameters": [
+        {
+          "displayName": "Vehicle Prefix",
+          "keyword": "p_vehicle_prefix",
+          "dataType": "STRING",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": [
+                {
+                  "value": "ALL"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "c703d804",
+      "displayName": "top_missing_dates_vehicles",
+      "queryLines": [
+        "SELECT\r\n",
+        "  CAST(vehicle_prefix AS STRING) AS vehicle_prefix,\r\n",
+        "  observed_dates_count,\r\n",
+        "  observed_date_span_days,\r\n",
+        "  missing_dates_within_span_count,\r\n",
+        "  date_presence_ratio,\r\n",
+        "  total_observations_count,\r\n",
+        "  max_consecutive_observed_dates,\r\n",
+        "  max_consecutive_missing_dates_within_span\r\n",
+        "FROM main.gold.gold_vehicle_multi_day_continuity\r\n",
+        "WHERE (\r\n",
+        "    :p_vehicle_prefix = 'ALL'\r\n",
+        "    OR CAST(vehicle_prefix AS STRING) = :p_vehicle_prefix\r\n",
+        "  )\r\n",
+        "ORDER BY missing_dates_within_span_count DESC, max_consecutive_missing_dates_within_span DESC, vehicle_prefix ASC\r\n",
+        "LIMIT 15\r\n"
+      ],
+      "parameters": [
+        {
+          "displayName": "Vehicle Prefix",
+          "keyword": "p_vehicle_prefix",
+          "dataType": "STRING",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": [
+                {
+                  "value": "ALL"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "d804e905",
+      "displayName": "coverage_vs_gap_scatter",
+      "queryLines": [
+        "SELECT\r\n",
+        "  CAST(oc.vehicle_prefix AS STRING) AS vehicle_prefix,\r\n",
+        "  oc.distinct_minutes_with_data,\r\n",
+        "  oc.continuity_support_ratio,\r\n",
+        "  oc.large_gaps_count,\r\n",
+        "  oc.max_gap_seconds,\r\n",
+        "  md.missing_dates_within_span_count,\r\n",
+        "  md.date_presence_ratio,\r\n",
+        "  md.total_observations_count,\r\n",
+        "  md.max_consecutive_missing_dates_within_span\r\n",
+        "FROM main.gold.gold_vehicle_observation_continuity oc\r\n",
+        "INNER JOIN main.gold.gold_vehicle_multi_day_continuity md\r\n",
+        "  ON oc.vehicle_prefix = md.vehicle_prefix\r\n",
+        "WHERE (\r\n",
+        "    :p_vehicle_prefix = 'ALL'\r\n",
+        "    OR CAST(oc.vehicle_prefix AS STRING) = :p_vehicle_prefix\r\n",
+        "  )\r\n",
+        "ORDER BY oc.continuity_support_ratio ASC, oc.large_gaps_count DESC, vehicle_prefix ASC\r\n",
+        "LIMIT 500\r\n"
+      ],
+      "parameters": [
+        {
+          "displayName": "Vehicle Prefix",
+          "keyword": "p_vehicle_prefix",
+          "dataType": "STRING",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": [
+                {
+                  "value": "ALL"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "e905f006",
+      "displayName": "temporal_gap_detail",
+      "queryLines": [
+        "SELECT\r\n",
+        "  CAST(oc.vehicle_prefix AS STRING) AS vehicle_prefix,\r\n",
+        "  oc.observations_count,\r\n",
+        "  oc.measured_gaps_count,\r\n",
+        "  oc.observed_span_seconds,\r\n",
+        "  oc.distinct_minutes_with_data,\r\n",
+        "  oc.distinct_hours_with_data,\r\n",
+        "  oc.avg_gap_seconds,\r\n",
+        "  oc.max_gap_seconds,\r\n",
+        "  oc.large_gaps_count,\r\n",
+        "  oc.continuity_support_ratio,\r\n",
+        "  md.observed_dates_count,\r\n",
+        "  md.first_observed_date,\r\n",
+        "  md.last_observed_date,\r\n",
+        "  md.observed_date_span_days,\r\n",
+        "  md.missing_dates_within_span_count,\r\n",
+        "  md.date_presence_ratio,\r\n",
+        "  md.total_observations_count,\r\n",
+        "  md.avg_observations_per_observed_date,\r\n",
+        "  md.max_consecutive_observed_dates,\r\n",
+        "  md.max_consecutive_missing_dates_within_span\r\n",
+        "FROM main.gold.gold_vehicle_observation_continuity oc\r\n",
+        "INNER JOIN main.gold.gold_vehicle_multi_day_continuity md\r\n",
+        "  ON oc.vehicle_prefix = md.vehicle_prefix\r\n",
+        "WHERE (\r\n",
+        "    :p_vehicle_prefix = 'ALL'\r\n",
+        "    OR CAST(oc.vehicle_prefix AS STRING) = :p_vehicle_prefix\r\n",
+        "  )\r\n",
+        "ORDER BY oc.large_gaps_count DESC, md.missing_dates_within_span_count DESC, vehicle_prefix ASC\r\n",
+        "LIMIT 500\r\n"
+      ],
+      "parameters": [
+        {
+          "displayName": "Vehicle Prefix",
+          "keyword": "p_vehicle_prefix",
+          "dataType": "STRING",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": [
+                {
+                  "value": "ALL"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "f006g107",
+      "displayName": "vehicle_prefix_options",
+      "queryLines": [
+        "SELECT\r\n",
+        "  vehicle_prefix\r\n",
+        "FROM (\r\n",
+        "  SELECT 'ALL' AS vehicle_prefix, 0 AS sort_order\r\n",
+        "  UNION ALL\r\n",
+        "  SELECT DISTINCT CAST(vehicle_prefix AS STRING) AS vehicle_prefix, 1 AS sort_order\r\n",
+        "  FROM main.gold.gold_vehicle_observation_continuity\r\n",
+        "  WHERE vehicle_prefix IS NOT NULL\r\n",
+        ") options\r\n",
+        "ORDER BY sort_order, vehicle_prefix\r\n"
+      ]
+    }
+  ],
+  "pages": [
+    {
+      "name": "g107h208",
+      "displayName": "Executive Overview",
+      "layout": [
+        {
+          "widget": {
+            "name": "vehicles-count",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "a501b602",
+                  "fields": [
+                    {
+                      "name": "vehicles_count",
+                      "expression": "`vehicles_count`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "showDescription": true,
+                "title": "Vehicles Count",
+                "description": "Number of vehicles included in the temporal coverage and gap monitor."
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "vehicles_count"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 3,
+            "height": 4
+          }
+        },
+        {
+          "widget": {
+            "name": "total-large-gaps-count",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "a501b602",
+                  "fields": [
+                    {
+                      "name": "total_large_gaps_count",
+                      "expression": "`total_large_gaps_count`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "showDescription": true,
+                "title": "Total Large Gaps Count",
+                "description": "Total number of large measured gaps across the selected vehicle population."
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "total_large_gaps_count"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 3,
+            "y": 0,
+            "width": 3,
+            "height": 4
+          }
+        },
+        {
+          "widget": {
+            "name": "avg-continuity-support-ratio",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "a501b602",
+                  "fields": [
+                    {
+                      "name": "avg_continuity_support_ratio",
+                      "expression": "`avg_continuity_support_ratio`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "showDescription": true,
+                "title": "Avg Continuity Support Ratio",
+                "description": "Average minute-level support ratio inside the observed window."
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "avg_continuity_support_ratio"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 0,
+            "width": 3,
+            "height": 4
+          }
+        },
+        {
+          "widget": {
+            "name": "avg-date-presence-ratio",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "a501b602",
+                  "fields": [
+                    {
+                      "name": "avg_date_presence_ratio",
+                      "expression": "`avg_date_presence_ratio`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "showDescription": true,
+                "title": "Avg Date Presence Ratio",
+                "description": "Average cross-day presence ratio inside each vehicle's observed date span."
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "avg_date_presence_ratio"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 9,
+            "y": 0,
+            "width": 3,
+            "height": 4
+          }
+        },
+        {
+          "widget": {
+            "name": "top-large-gaps-vehicles",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "b602c703",
+                  "fields": [
+                    {
+                      "name": "vehicle_prefix",
+                      "expression": "`vehicle_prefix`"
+                    },
+                    {
+                      "name": "large_gaps_count",
+                      "expression": "`large_gaps_count`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Top Vehicles by Large Gaps Count"
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "vehicle_prefix",
+                  "axis": {
+                    "title": "Vehicle Prefix"
+                  },
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "large_gaps_count",
+                  "axis": {
+                    "title": "Large Gaps Count"
+                  },
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 4,
+            "width": 12,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "top-missing-dates-vehicles",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "c703d804",
+                  "fields": [
+                    {
+                      "name": "vehicle_prefix",
+                      "expression": "`vehicle_prefix`"
+                    },
+                    {
+                      "name": "missing_dates_within_span_count",
+                      "expression": "`missing_dates_within_span_count`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Top Vehicles by Missing Dates Within Span"
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "vehicle_prefix",
+                  "axis": {
+                    "title": "Vehicle Prefix"
+                  },
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "missing_dates_within_span_count",
+                  "axis": {
+                    "title": "Missing Dates Within Span"
+                  },
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 10,
+            "width": 12,
+            "height": 6
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layoutVersion": "GRID_V1"
+    },
+    {
+      "name": "h208i309",
+      "displayName": "Coverage and Detail",
+      "layout": [
+        {
+          "widget": {
+            "name": "coverage-vs-gap-scatter",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "d804e905",
+                  "fields": [
+                    {
+                      "name": "distinct_minutes_with_data",
+                      "expression": "`distinct_minutes_with_data`"
+                    },
+                    {
+                      "name": "continuity_support_ratio",
+                      "expression": "`continuity_support_ratio`"
+                    },
+                    {
+                      "name": "large_gaps_count",
+                      "expression": "`large_gaps_count`"
+                    },
+                    {
+                      "name": "max_gap_seconds",
+                      "expression": "`max_gap_seconds`"
+                    },
+                    {
+                      "name": "vehicle_prefix",
+                      "expression": "`vehicle_prefix`"
+                    },
+                    {
+                      "name": "missing_dates_within_span_count",
+                      "expression": "`missing_dates_within_span_count`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Coverage vs Gap Severity"
+              },
+              "widgetType": "scatter",
+              "encodings": {
+                "x": {
+                  "fieldName": "distinct_minutes_with_data",
+                  "axis": {
+                    "title": "Distinct Minutes With Data"
+                  },
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "y": {
+                  "fieldName": "continuity_support_ratio",
+                  "axis": {
+                    "title": "Continuity Support Ratio"
+                  },
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "size": {
+                  "fieldName": "large_gaps_count",
+                  "legend": {
+                    "title": "Large Gaps Count"
+                  }
+                },
+                "color": {
+                  "fieldName": "max_gap_seconds",
+                  "legend": {
+                    "title": "Max Gap (Sec)"
+                  },
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "label": {
+                  "fieldName": "vehicle_prefix"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 12,
+            "height": 7
+          }
+        },
+        {
+          "widget": {
+            "name": "temporal-gap-detail-table",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "e905f006",
+                  "fields": [
+                    {
+                      "name": "vehicle_prefix",
+                      "expression": "`vehicle_prefix`"
+                    },
+                    {
+                      "name": "observations_count",
+                      "expression": "`observations_count`"
+                    },
+                    {
+                      "name": "measured_gaps_count",
+                      "expression": "`measured_gaps_count`"
+                    },
+                    {
+                      "name": "observed_span_seconds",
+                      "expression": "`observed_span_seconds`"
+                    },
+                    {
+                      "name": "distinct_minutes_with_data",
+                      "expression": "`distinct_minutes_with_data`"
+                    },
+                    {
+                      "name": "distinct_hours_with_data",
+                      "expression": "`distinct_hours_with_data`"
+                    },
+                    {
+                      "name": "avg_gap_seconds",
+                      "expression": "`avg_gap_seconds`"
+                    },
+                    {
+                      "name": "max_gap_seconds",
+                      "expression": "`max_gap_seconds`"
+                    },
+                    {
+                      "name": "large_gaps_count",
+                      "expression": "`large_gaps_count`"
+                    },
+                    {
+                      "name": "continuity_support_ratio",
+                      "expression": "`continuity_support_ratio`"
+                    },
+                    {
+                      "name": "observed_dates_count",
+                      "expression": "`observed_dates_count`"
+                    },
+                    {
+                      "name": "observed_date_span_days",
+                      "expression": "`observed_date_span_days`"
+                    },
+                    {
+                      "name": "missing_dates_within_span_count",
+                      "expression": "`missing_dates_within_span_count`"
+                    },
+                    {
+                      "name": "date_presence_ratio",
+                      "expression": "`date_presence_ratio`"
+                    },
+                    {
+                      "name": "total_observations_count",
+                      "expression": "`total_observations_count`"
+                    },
+                    {
+                      "name": "avg_observations_per_observed_date",
+                      "expression": "`avg_observations_per_observed_date`"
+                    },
+                    {
+                      "name": "max_consecutive_observed_dates",
+                      "expression": "`max_consecutive_observed_dates`"
+                    },
+                    {
+                      "name": "max_consecutive_missing_dates_within_span",
+                      "expression": "`max_consecutive_missing_dates_within_span`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Temporal Gap Detail"
+              },
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "vehicle_prefix",
+                    "displayName": "Vehicle Prefix"
+                  },
+                  {
+                    "fieldName": "observations_count",
+                    "displayName": "Observations Count"
+                  },
+                  {
+                    "fieldName": "measured_gaps_count",
+                    "displayName": "Measured Gaps Count"
+                  },
+                  {
+                    "fieldName": "observed_span_seconds",
+                    "displayName": "Observed Span (Sec)"
+                  },
+                  {
+                    "fieldName": "distinct_minutes_with_data",
+                    "displayName": "Distinct Minutes With Data"
+                  },
+                  {
+                    "fieldName": "distinct_hours_with_data",
+                    "displayName": "Distinct Hours With Data"
+                  },
+                  {
+                    "fieldName": "avg_gap_seconds",
+                    "displayName": "Avg Gap (Sec)"
+                  },
+                  {
+                    "fieldName": "max_gap_seconds",
+                    "displayName": "Max Gap (Sec)"
+                  },
+                  {
+                    "fieldName": "large_gaps_count",
+                    "displayName": "Large Gaps Count"
+                  },
+                  {
+                    "fieldName": "continuity_support_ratio",
+                    "displayName": "Continuity Support Ratio"
+                  },
+                  {
+                    "fieldName": "observed_dates_count",
+                    "displayName": "Observed Dates Count"
+                  },
+                  {
+                    "fieldName": "observed_date_span_days",
+                    "displayName": "Observed Date Span (Days)"
+                  },
+                  {
+                    "fieldName": "missing_dates_within_span_count",
+                    "displayName": "Missing Dates Within Span"
+                  },
+                  {
+                    "fieldName": "date_presence_ratio",
+                    "displayName": "Date Presence Ratio"
+                  },
+                  {
+                    "fieldName": "total_observations_count",
+                    "displayName": "Total Observations Count"
+                  },
+                  {
+                    "fieldName": "avg_observations_per_observed_date",
+                    "displayName": "Avg Observations Per Observed Date"
+                  },
+                  {
+                    "fieldName": "max_consecutive_observed_dates",
+                    "displayName": "Max Consecutive Observed Dates"
+                  },
+                  {
+                    "fieldName": "max_consecutive_missing_dates_within_span",
+                    "displayName": "Max Consecutive Missing Dates"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 7,
+            "width": 12,
+            "height": 7
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layoutVersion": "GRID_V1"
+    },
+    {
+      "name": "i309j410",
+      "displayName": "Global Filters",
+      "layout": [
+        {
+          "widget": {
+            "name": "vehicle-prefix",
+            "queries": [
+              {
+                "name": "dashboards/temporal_coverage_gap_monitor/datasets/vehicle_prefix_options_vehicle_prefix",
+                "query": {
+                  "datasetName": "f006g107",
+                  "fields": [
+                    {
+                      "name": "vehicle_prefix",
+                      "expression": "`vehicle_prefix`"
+                    },
+                    {
+                      "name": "vehicle_prefix_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "parameter_dashboards/temporal_coverage_gap_monitor/datasets/temporal_gap_summary_p_vehicle_prefix",
+                "query": {
+                  "datasetName": "a501b602",
+                  "parameters": [
+                    {
+                      "name": "p_vehicle_prefix",
+                      "keyword": "p_vehicle_prefix"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "parameter_dashboards/temporal_coverage_gap_monitor/datasets/top_large_gaps_vehicles_p_vehicle_prefix",
+                "query": {
+                  "datasetName": "b602c703",
+                  "parameters": [
+                    {
+                      "name": "p_vehicle_prefix",
+                      "keyword": "p_vehicle_prefix"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "parameter_dashboards/temporal_coverage_gap_monitor/datasets/top_missing_dates_vehicles_p_vehicle_prefix",
+                "query": {
+                  "datasetName": "c703d804",
+                  "parameters": [
+                    {
+                      "name": "p_vehicle_prefix",
+                      "keyword": "p_vehicle_prefix"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "parameter_dashboards/temporal_coverage_gap_monitor/datasets/coverage_vs_gap_scatter_p_vehicle_prefix",
+                "query": {
+                  "datasetName": "d804e905",
+                  "parameters": [
+                    {
+                      "name": "p_vehicle_prefix",
+                      "keyword": "p_vehicle_prefix"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "parameter_dashboards/temporal_coverage_gap_monitor/datasets/temporal_gap_detail_p_vehicle_prefix",
+                "query": {
+                  "datasetName": "e905f006",
+                  "parameters": [
+                    {
+                      "name": "p_vehicle_prefix",
+                      "keyword": "p_vehicle_prefix"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Vehicle Prefix"
+              },
+              "widgetType": "filter-single-select",
+              "encodings": {
+                "fields": [
+                  {
+                    "fieldName": "vehicle_prefix",
+                    "queryName": "dashboards/temporal_coverage_gap_monitor/datasets/vehicle_prefix_options_vehicle_prefix"
+                  },
+                  {
+                    "parameterName": "p_vehicle_prefix",
+                    "queryName": "parameter_dashboards/temporal_coverage_gap_monitor/datasets/temporal_gap_summary_p_vehicle_prefix"
+                  },
+                  {
+                    "parameterName": "p_vehicle_prefix",
+                    "queryName": "parameter_dashboards/temporal_coverage_gap_monitor/datasets/top_large_gaps_vehicles_p_vehicle_prefix"
+                  },
+                  {
+                    "parameterName": "p_vehicle_prefix",
+                    "queryName": "parameter_dashboards/temporal_coverage_gap_monitor/datasets/top_missing_dates_vehicles_p_vehicle_prefix"
+                  },
+                  {
+                    "parameterName": "p_vehicle_prefix",
+                    "queryName": "parameter_dashboards/temporal_coverage_gap_monitor/datasets/coverage_vs_gap_scatter_p_vehicle_prefix"
+                  },
+                  {
+                    "parameterName": "p_vehicle_prefix",
+                    "queryName": "parameter_dashboards/temporal_coverage_gap_monitor/datasets/temporal_gap_detail_p_vehicle_prefix"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 4,
+            "height": 1
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_GLOBAL_FILTERS",
+      "layoutVersion": "GRID_V1"
+    }
+  ],
+  "uiSettings": {
+    "theme": {
+      "widgetHeaderAlignment": "ALIGNMENT_UNSPECIFIED"
+    },
+    "applyModeEnabled": false
+  }
+}

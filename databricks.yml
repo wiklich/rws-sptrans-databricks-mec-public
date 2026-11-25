@@ -1,0 +1,65 @@
+# This is a Databricks asset bundle definition for rws-sptrans-databricks-mec.
+# The Databricks extension requires databricks.yml configuration file.
+# See https://docs.databricks.com/dev-tools/bundles/index.html for documentation.
+
+bundle:
+  name: rws-sptrans-databricks-mec
+
+artifacts:
+  sptrans_python_lib:
+    type: whl
+    build: python setup.py bdist_wheel
+    path: .
+
+sync:
+  exclude:
+    - terraform/**
+    - docs/**
+    - .git/**
+    - .github/**
+    - tests/**
+    - README.md
+    - "*.md"
+
+include:
+  - sptrans-bundle/resources/pipelines/*.yml
+  - sptrans-bundle/resources/jobs/*.yml
+  - sptrans-bundle/resources/dashboards/*.yml
+
+variables:
+  catalog:
+    default: main
+  bronze_schema:
+    default: bronze
+  silver_schema:
+    default: silver
+  gold_schema:
+    default: gold
+  warehouse_id:
+    default: ""
+
+targets:
+  dev:
+    default: true
+    mode: development
+    # The workspace host, the run-as identity and the SQL warehouse ID are not
+    # committed. In development mode the bundle runs as the identity that deploys it.
+    # See "Local configuration" in README.md for how to provide the other two.
+
+  ## Optionally, there could be 'staging' or 'prod' targets here.
+  #
+  # uat:
+  #  workspace:
+  #    host: https://<your-uat-workspace>
+  #  run_as:
+  #    service_principal_name: <service-principal-id>
+  #  variables:
+  #    warehouse_id: "<DEV_WAREHOUSE_ID>"
+  #
+  # prod:
+  #  workspace:
+  #    host: https://<your-prod-workspace>
+  #  run_as:
+  #    service_principal_name: <service-principal-id>
+  #  variables:
+  #    warehouse_id: "<DEV_WAREHOUSE_ID>"

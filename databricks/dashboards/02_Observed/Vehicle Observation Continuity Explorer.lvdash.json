@@ -1,0 +1,930 @@
+{
+  "datasets": [
+    {
+      "name": "a91b02c3",
+      "displayName": "vehicle_continuity_summary",
+      "queryLines": [
+        "SELECT\r\n",
+        "  MAX(record_created_at) AS latest_refresh_at,\r\n",
+        "  COUNT(*) AS vehicles_count,\r\n",
+        "  SUM(observations_count) AS total_observations_count,\r\n",
+        "  SUM(measured_gaps_count) AS total_measured_gaps_count,\r\n",
+        "  AVG(continuity_support_ratio) AS avg_continuity_support_ratio,\r\n",
+        "  CASE\r\n",
+        "    WHEN SUM(measured_gaps_count) = 0 THEN NULL\r\n",
+        "    ELSE SUM(COALESCE(avg_gap_seconds, 0.0) * measured_gaps_count) * 1.0 / SUM(measured_gaps_count)\r\n",
+        "  END AS weighted_avg_gap_seconds,\r\n",
+        "  AVG(max_gap_seconds) AS avg_max_gap_seconds,\r\n",
+        "  SUM(large_gaps_count) AS total_large_gaps_count\r\n",
+        "FROM main.gold.gold_vehicle_observation_continuity\r\n",
+        "WHERE (\r\n",
+        "    :p_vehicle_prefix = 'ALL'\r\n",
+        "    OR CAST(vehicle_prefix AS STRING) = :p_vehicle_prefix\r\n",
+        "  )\r\n"
+      ],
+      "parameters": [
+        {
+          "displayName": "Vehicle Prefix",
+          "keyword": "p_vehicle_prefix",
+          "dataType": "STRING",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": [
+                {
+                  "value": "ALL"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "b02c13d4",
+      "displayName": "most_fragmented_vehicles",
+      "queryLines": [
+        "SELECT\r\n",
+        "  CAST(vehicle_prefix AS STRING) AS vehicle_prefix,\r\n",
+        "  observations_count,\r\n",
+        "  measured_gaps_count,\r\n",
+        "  continuity_support_ratio,\r\n",
+        "  avg_gap_seconds,\r\n",
+        "  max_gap_seconds,\r\n",
+        "  large_gaps_count,\r\n",
+        "  distinct_minutes_with_data,\r\n",
+        "  observed_span_seconds\r\n",
+        "FROM main.gold.gold_vehicle_observation_continuity\r\n",
+        "WHERE (\r\n",
+        "    :p_vehicle_prefix = 'ALL'\r\n",
+        "    OR CAST(vehicle_prefix AS STRING) = :p_vehicle_prefix\r\n",
+        "  )\r\n",
+        "ORDER BY continuity_support_ratio ASC, large_gaps_count DESC, vehicle_prefix ASC\r\n",
+        "LIMIT 15\r\n"
+      ],
+      "parameters": [
+        {
+          "displayName": "Vehicle Prefix",
+          "keyword": "p_vehicle_prefix",
+          "dataType": "STRING",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": [
+                {
+                  "value": "ALL"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "c13d24e5",
+      "displayName": "most_continuous_vehicles",
+      "queryLines": [
+        "SELECT\r\n",
+        "  CAST(vehicle_prefix AS STRING) AS vehicle_prefix,\r\n",
+        "  observations_count,\r\n",
+        "  measured_gaps_count,\r\n",
+        "  continuity_support_ratio,\r\n",
+        "  avg_gap_seconds,\r\n",
+        "  max_gap_seconds,\r\n",
+        "  large_gaps_count,\r\n",
+        "  distinct_minutes_with_data,\r\n",
+        "  observed_span_seconds\r\n",
+        "FROM main.gold.gold_vehicle_observation_continuity\r\n",
+        "WHERE (\r\n",
+        "    :p_vehicle_prefix = 'ALL'\r\n",
+        "    OR CAST(vehicle_prefix AS STRING) = :p_vehicle_prefix\r\n",
+        "  )\r\n",
+        "ORDER BY continuity_support_ratio DESC, large_gaps_count ASC, vehicle_prefix ASC\r\n",
+        "LIMIT 15\r\n"
+      ],
+      "parameters": [
+        {
+          "displayName": "Vehicle Prefix",
+          "keyword": "p_vehicle_prefix",
+          "dataType": "STRING",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": [
+                {
+                  "value": "ALL"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "d24e35f6",
+      "displayName": "support_vs_fragmentation_scatter",
+      "queryLines": [
+        "SELECT\r\n",
+        "  CAST(vehicle_prefix AS STRING) AS vehicle_prefix,\r\n",
+        "  observations_count,\r\n",
+        "  measured_gaps_count,\r\n",
+        "  distinct_minutes_with_data,\r\n",
+        "  distinct_hours_with_data,\r\n",
+        "  observed_span_seconds,\r\n",
+        "  avg_gap_seconds,\r\n",
+        "  max_gap_seconds,\r\n",
+        "  large_gaps_count,\r\n",
+        "  continuity_support_ratio,\r\n",
+        "  first_captured_at_local,\r\n",
+        "  last_captured_at_local\r\n",
+        "FROM main.gold.gold_vehicle_observation_continuity\r\n",
+        "WHERE (\r\n",
+        "    :p_vehicle_prefix = 'ALL'\r\n",
+        "    OR CAST(vehicle_prefix AS STRING) = :p_vehicle_prefix\r\n",
+        "  )\r\n",
+        "ORDER BY continuity_support_ratio ASC, large_gaps_count DESC, vehicle_prefix ASC\r\n",
+        "LIMIT 500\r\n"
+      ],
+      "parameters": [
+        {
+          "displayName": "Vehicle Prefix",
+          "keyword": "p_vehicle_prefix",
+          "dataType": "STRING",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": [
+                {
+                  "value": "ALL"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "e35f46g7",
+      "displayName": "vehicle_continuity_detail",
+      "queryLines": [
+        "SELECT\r\n",
+        "  CAST(vehicle_prefix AS STRING) AS vehicle_prefix,\r\n",
+        "  observations_count,\r\n",
+        "  measured_gaps_count,\r\n",
+        "  first_captured_at_local,\r\n",
+        "  last_captured_at_local,\r\n",
+        "  observed_span_seconds,\r\n",
+        "  distinct_minutes_with_data,\r\n",
+        "  distinct_hours_with_data,\r\n",
+        "  avg_gap_seconds,\r\n",
+        "  max_gap_seconds,\r\n",
+        "  large_gaps_count,\r\n",
+        "  continuity_support_ratio,\r\n",
+        "  record_created_at\r\n",
+        "FROM main.gold.gold_vehicle_observation_continuity\r\n",
+        "WHERE (\r\n",
+        "    :p_vehicle_prefix = 'ALL'\r\n",
+        "    OR CAST(vehicle_prefix AS STRING) = :p_vehicle_prefix\r\n",
+        "  )\r\n",
+        "ORDER BY continuity_support_ratio ASC, large_gaps_count DESC, vehicle_prefix ASC\r\n",
+        "LIMIT 500\r\n"
+      ],
+      "parameters": [
+        {
+          "displayName": "Vehicle Prefix",
+          "keyword": "p_vehicle_prefix",
+          "dataType": "STRING",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": [
+                {
+                  "value": "ALL"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "f46g57h8",
+      "displayName": "vehicle_prefix_options",
+      "queryLines": [
+        "SELECT\r\n",
+        "  vehicle_prefix\r\n",
+        "FROM (\r\n",
+        "  SELECT 'ALL' AS vehicle_prefix, 0 AS sort_order\r\n",
+        "  UNION ALL\r\n",
+        "  SELECT DISTINCT CAST(vehicle_prefix AS STRING) AS vehicle_prefix, 1 AS sort_order\r\n",
+        "  FROM main.gold.gold_vehicle_observation_continuity\r\n",
+        "  WHERE vehicle_prefix IS NOT NULL\r\n",
+        ") options\r\n",
+        "ORDER BY sort_order, vehicle_prefix\r\n"
+      ]
+    }
+  ],
+  "pages": [
+    {
+      "name": "g57h68i9",
+      "displayName": "Executive Overview",
+      "layout": [
+        {
+          "widget": {
+            "name": "vehicles-count",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "a91b02c3",
+                  "fields": [
+                    {
+                      "name": "latest_refresh_at",
+                      "expression": "`latest_refresh_at`"
+                    },
+                    {
+                      "name": "vehicles_count",
+                      "expression": "`vehicles_count`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "showDescription": true,
+                "title": "Vehicles Count",
+                "description": "Number of vehicles represented in the vehicle observation continuity output."
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "vehicles_count"
+                },
+                "period": {
+                  "fieldName": "latest_refresh_at"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 3,
+            "height": 4
+          }
+        },
+        {
+          "widget": {
+            "name": "total-observations-count",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "a91b02c3",
+                  "fields": [
+                    {
+                      "name": "latest_refresh_at",
+                      "expression": "`latest_refresh_at`"
+                    },
+                    {
+                      "name": "total_observations_count",
+                      "expression": "`total_observations_count`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "showDescription": true,
+                "title": "Total Observations Count",
+                "description": "Total number of observed position records contributing to vehicle continuity analysis."
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "total_observations_count"
+                },
+                "period": {
+                  "fieldName": "latest_refresh_at"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 3,
+            "y": 0,
+            "width": 3,
+            "height": 4
+          }
+        },
+        {
+          "widget": {
+            "name": "avg-continuity-support-ratio",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "a91b02c3",
+                  "fields": [
+                    {
+                      "name": "latest_refresh_at",
+                      "expression": "`latest_refresh_at`"
+                    },
+                    {
+                      "name": "avg_continuity_support_ratio",
+                      "expression": "`avg_continuity_support_ratio`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "showDescription": true,
+                "title": "Avg Continuity Support Ratio",
+                "description": "Average vehicle-level ratio between minutes with data and total observed minute span."
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "avg_continuity_support_ratio"
+                },
+                "period": {
+                  "fieldName": "latest_refresh_at"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 0,
+            "width": 3,
+            "height": 4
+          }
+        },
+        {
+          "widget": {
+            "name": "weighted-avg-gap-seconds",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "a91b02c3",
+                  "fields": [
+                    {
+                      "name": "latest_refresh_at",
+                      "expression": "`latest_refresh_at`"
+                    },
+                    {
+                      "name": "weighted_avg_gap_seconds",
+                      "expression": "`weighted_avg_gap_seconds`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "showDescription": true,
+                "title": "Weighted Avg Gap (Sec)",
+                "description": "Weighted average measurable gap in seconds across vehicles, using measured gap support."
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "weighted_avg_gap_seconds"
+                },
+                "period": {
+                  "fieldName": "latest_refresh_at"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 9,
+            "y": 0,
+            "width": 3,
+            "height": 4
+          }
+        },
+        {
+          "widget": {
+            "name": "most-fragmented-vehicles",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "b02c13d4",
+                  "fields": [
+                    {
+                      "name": "vehicle_prefix",
+                      "expression": "`vehicle_prefix`"
+                    },
+                    {
+                      "name": "continuity_support_ratio",
+                      "expression": "`continuity_support_ratio`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Most Fragmented Vehicles by Continuity Support Ratio"
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "vehicle_prefix",
+                  "axis": {
+                    "title": "Vehicle Prefix"
+                  },
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "continuity_support_ratio",
+                  "axis": {
+                    "title": "Continuity Support Ratio"
+                  },
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 4,
+            "width": 12,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "most-continuous-vehicles",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "c13d24e5",
+                  "fields": [
+                    {
+                      "name": "vehicle_prefix",
+                      "expression": "`vehicle_prefix`"
+                    },
+                    {
+                      "name": "continuity_support_ratio",
+                      "expression": "`continuity_support_ratio`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Most Continuous Vehicles by Continuity Support Ratio"
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "vehicle_prefix",
+                  "axis": {
+                    "title": "Vehicle Prefix"
+                  },
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "continuity_support_ratio",
+                  "axis": {
+                    "title": "Continuity Support Ratio"
+                  },
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 10,
+            "width": 12,
+            "height": 6
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layoutVersion": "GRID_V1"
+    },
+    {
+      "name": "h68i79j0",
+      "displayName": "Fragmentation and Detail",
+      "layout": [
+        {
+          "widget": {
+            "name": "support-vs-fragmentation-scatter",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "d24e35f6",
+                  "fields": [
+                    {
+                      "name": "distinct_minutes_with_data",
+                      "expression": "`distinct_minutes_with_data`"
+                    },
+                    {
+                      "name": "continuity_support_ratio",
+                      "expression": "`continuity_support_ratio`"
+                    },
+                    {
+                      "name": "large_gaps_count",
+                      "expression": "`large_gaps_count`"
+                    },
+                    {
+                      "name": "max_gap_seconds",
+                      "expression": "`max_gap_seconds`"
+                    },
+                    {
+                      "name": "vehicle_prefix",
+                      "expression": "`vehicle_prefix`"
+                    },
+                    {
+                      "name": "observations_count",
+                      "expression": "`observations_count`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Support vs Fragmentation"
+              },
+              "widgetType": "scatter",
+              "encodings": {
+                "x": {
+                  "fieldName": "distinct_minutes_with_data",
+                  "axis": {
+                    "title": "Distinct Minutes With Data"
+                  },
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "y": {
+                  "fieldName": "continuity_support_ratio",
+                  "axis": {
+                    "title": "Continuity Support Ratio"
+                  },
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "size": {
+                  "fieldName": "large_gaps_count",
+                  "legend": {
+                    "title": "Large Gaps Count"
+                  }
+                },
+                "color": {
+                  "fieldName": "max_gap_seconds",
+                  "legend": {
+                    "title": "Max Gap (Sec)"
+                  },
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "label": {
+                  "fieldName": "vehicle_prefix"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 12,
+            "height": 7
+          }
+        },
+        {
+          "widget": {
+            "name": "vehicle-continuity-detail-table",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "e35f46g7",
+                  "fields": [
+                    {
+                      "name": "vehicle_prefix",
+                      "expression": "`vehicle_prefix`"
+                    },
+                    {
+                      "name": "observations_count",
+                      "expression": "`observations_count`"
+                    },
+                    {
+                      "name": "measured_gaps_count",
+                      "expression": "`measured_gaps_count`"
+                    },
+                    {
+                      "name": "first_captured_at_local",
+                      "expression": "`first_captured_at_local`"
+                    },
+                    {
+                      "name": "last_captured_at_local",
+                      "expression": "`last_captured_at_local`"
+                    },
+                    {
+                      "name": "observed_span_seconds",
+                      "expression": "`observed_span_seconds`"
+                    },
+                    {
+                      "name": "distinct_minutes_with_data",
+                      "expression": "`distinct_minutes_with_data`"
+                    },
+                    {
+                      "name": "distinct_hours_with_data",
+                      "expression": "`distinct_hours_with_data`"
+                    },
+                    {
+                      "name": "avg_gap_seconds",
+                      "expression": "`avg_gap_seconds`"
+                    },
+                    {
+                      "name": "max_gap_seconds",
+                      "expression": "`max_gap_seconds`"
+                    },
+                    {
+                      "name": "large_gaps_count",
+                      "expression": "`large_gaps_count`"
+                    },
+                    {
+                      "name": "continuity_support_ratio",
+                      "expression": "`continuity_support_ratio`"
+                    }
+                  ],
+                  "disaggregated": true,
+                  "orders": [
+                    {
+                      "direction": "ASC",
+                      "expression": "`continuity_support_ratio`"
+                    },
+                    {
+                      "direction": "DESC",
+                      "expression": "`large_gaps_count`"
+                    },
+                    {
+                      "direction": "ASC",
+                      "expression": "`vehicle_prefix`"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "vehicle_prefix",
+                    "displayName": "Vehicle Prefix"
+                  },
+                  {
+                    "fieldName": "observations_count",
+                    "displayName": "Observations Count"
+                  },
+                  {
+                    "fieldName": "measured_gaps_count",
+                    "displayName": "Measured Gaps Count"
+                  },
+                  {
+                    "fieldName": "first_captured_at_local",
+                    "displayName": "First Captured At Local"
+                  },
+                  {
+                    "fieldName": "last_captured_at_local",
+                    "displayName": "Last Captured At Local"
+                  },
+                  {
+                    "fieldName": "observed_span_seconds",
+                    "displayName": "Observed Span (Sec)"
+                  },
+                  {
+                    "fieldName": "distinct_minutes_with_data",
+                    "displayName": "Distinct Minutes With Data"
+                  },
+                  {
+                    "fieldName": "distinct_hours_with_data",
+                    "displayName": "Distinct Hours With Data"
+                  },
+                  {
+                    "fieldName": "avg_gap_seconds",
+                    "displayName": "Avg Gap (Sec)"
+                  },
+                  {
+                    "fieldName": "max_gap_seconds",
+                    "displayName": "Max Gap (Sec)"
+                  },
+                  {
+                    "fieldName": "large_gaps_count",
+                    "displayName": "Large Gaps Count"
+                  },
+                  {
+                    "fieldName": "continuity_support_ratio",
+                    "displayName": "Continuity Support Ratio"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 7,
+            "width": 12,
+            "height": 7
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layoutVersion": "GRID_V1"
+    },
+    {
+      "name": "i79j80k1",
+      "displayName": "Global Filters",
+      "layout": [
+        {
+          "widget": {
+            "name": "vehicle-prefix",
+            "queries": [
+              {
+                "name": "dashboards/vehicle_observation_continuity_explorer/datasets/vehicle_prefix_options_vehicle_prefix",
+                "query": {
+                  "datasetName": "f46g57h8",
+                  "fields": [
+                    {
+                      "name": "vehicle_prefix",
+                      "expression": "`vehicle_prefix`"
+                    },
+                    {
+                      "name": "vehicle_prefix_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "parameter_dashboards/vehicle_observation_continuity_explorer/datasets/vehicle_continuity_summary_p_vehicle_prefix",
+                "query": {
+                  "datasetName": "a91b02c3",
+                  "parameters": [
+                    {
+                      "name": "p_vehicle_prefix",
+                      "keyword": "p_vehicle_prefix"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "parameter_dashboards/vehicle_observation_continuity_explorer/datasets/most_fragmented_vehicles_p_vehicle_prefix",
+                "query": {
+                  "datasetName": "b02c13d4",
+                  "parameters": [
+                    {
+                      "name": "p_vehicle_prefix",
+                      "keyword": "p_vehicle_prefix"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "parameter_dashboards/vehicle_observation_continuity_explorer/datasets/most_continuous_vehicles_p_vehicle_prefix",
+                "query": {
+                  "datasetName": "c13d24e5",
+                  "parameters": [
+                    {
+                      "name": "p_vehicle_prefix",
+                      "keyword": "p_vehicle_prefix"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "parameter_dashboards/vehicle_observation_continuity_explorer/datasets/support_vs_fragmentation_scatter_p_vehicle_prefix",
+                "query": {
+                  "datasetName": "d24e35f6",
+                  "parameters": [
+                    {
+                      "name": "p_vehicle_prefix",
+                      "keyword": "p_vehicle_prefix"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "parameter_dashboards/vehicle_observation_continuity_explorer/datasets/vehicle_continuity_detail_p_vehicle_prefix",
+                "query": {
+                  "datasetName": "e35f46g7",
+                  "parameters": [
+                    {
+                      "name": "p_vehicle_prefix",
+                      "keyword": "p_vehicle_prefix"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Vehicle Prefix"
+              },
+              "widgetType": "filter-single-select",
+              "encodings": {
+                "fields": [
+                  {
+                    "fieldName": "vehicle_prefix",
+                    "queryName": "dashboards/vehicle_observation_continuity_explorer/datasets/vehicle_prefix_options_vehicle_prefix"
+                  },
+                  {
+                    "parameterName": "p_vehicle_prefix",
+                    "queryName": "parameter_dashboards/vehicle_observation_continuity_explorer/datasets/vehicle_continuity_summary_p_vehicle_prefix"
+                  },
+                  {
+                    "parameterName": "p_vehicle_prefix",
+                    "queryName": "parameter_dashboards/vehicle_observation_continuity_explorer/datasets/most_fragmented_vehicles_p_vehicle_prefix"
+                  },
+                  {
+                    "parameterName": "p_vehicle_prefix",
+                    "queryName": "parameter_dashboards/vehicle_observation_continuity_explorer/datasets/most_continuous_vehicles_p_vehicle_prefix"
+                  },
+                  {
+                    "parameterName": "p_vehicle_prefix",
+                    "queryName": "parameter_dashboards/vehicle_observation_continuity_explorer/datasets/support_vs_fragmentation_scatter_p_vehicle_prefix"
+                  },
+                  {
+                    "parameterName": "p_vehicle_prefix",
+                    "queryName": "parameter_dashboards/vehicle_observation_continuity_explorer/datasets/vehicle_continuity_detail_p_vehicle_prefix"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 4,
+            "height": 1
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_GLOBAL_FILTERS",
+      "layoutVersion": "GRID_V1"
+    }
+  ],
+  "uiSettings": {
+    "theme": {
+      "widgetHeaderAlignment": "ALIGNMENT_UNSPECIFIED"
+    },
+    "applyModeEnabled": false
+  }
+}

@@ -1,0 +1,25 @@
+resources:
+  dashboards:
+    executive_overview:
+      display_name: "Executive Overview"
+      file_path: ../../../databricks/dashboards/01_Executive_Overview/Executive Overview.lvdash.json
+      warehouse_id: ${var.warehouse_id}
+      parent_path: /Shared/sptrans/dashboards/01_Executive_Overview
+      dataset_catalog: ${var.catalog}
+      dataset_schema: ${var.gold_schema}
+
+    observed_activity_overview:
+      display_name: "Observed Activity Overview"
+      file_path: ../../../databricks/dashboards/01_Executive_Overview/Observed Activity Overview.lvdash.json
+      warehouse_id: ${var.warehouse_id}
+      parent_path: /Shared/sptrans/dashboards/01_Executive_Overview
+      dataset_catalog: ${var.catalog}
+      dataset_schema: ${var.gold_schema}
+
+    planned_vs_observed_service_comparison:
+      display_name: "Planned vs Observed Service Comparison"
+      file_path: ../../../databricks/dashboards/01_Executive_Overview/Planned vs Observed Service Comparison.lvdash.json
+      warehouse_id: ${var.warehouse_id}
+      parent_path: /Shared/sptrans/dashboards/01_Executive_Overview
+      dataset_catalog: ${var.catalog}
+      dataset_schema: ${var.gold_schema}

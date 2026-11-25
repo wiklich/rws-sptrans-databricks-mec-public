@@ -1,0 +1,717 @@
+{
+  "datasets": [
+    {
+      "name": "11aa22bb",
+      "displayName": "recurring_patterns_summary",
+      "queryLines": [
+        "SELECT\r\n",
+        "  MAX(record_created_at) AS latest_refresh_at,\r\n",
+        "  COUNT(*) AS pattern_buckets_count,\r\n",
+        "  SUM(observations_count) AS total_observations_count,\r\n",
+        "  SUM(measured_intervals_count) AS total_measured_intervals_count,\r\n",
+        "  CASE\r\n",
+        "    WHEN SUM(measured_intervals_count) = 0 THEN NULL\r\n",
+        "    ELSE SUM(COALESCE(avg_update_interval_seconds, 0.0) * measured_intervals_count) * 1.0 / SUM(measured_intervals_count)\r\n",
+        "  END AS weighted_avg_update_interval_seconds,\r\n",
+        "  AVG(distinct_vehicles_count) AS avg_distinct_vehicles_per_bucket,\r\n",
+        "  AVG(distinct_dates_count) AS avg_distinct_dates_per_bucket\r\n",
+        "FROM main.gold.gold_recurring_update_patterns\r\n"
+      ]
+    },
+    {
+      "name": "22bb33cc",
+      "displayName": "recurring_patterns_bucket_detail",
+      "queryLines": [
+        "SELECT\r\n",
+        "  day_of_week,\r\n",
+        "  CASE day_of_week\r\n",
+        "    WHEN 1 THEN 'Sunday'\r\n",
+        "    WHEN 2 THEN 'Monday'\r\n",
+        "    WHEN 3 THEN 'Tuesday'\r\n",
+        "    WHEN 4 THEN 'Wednesday'\r\n",
+        "    WHEN 5 THEN 'Thursday'\r\n",
+        "    WHEN 6 THEN 'Friday'\r\n",
+        "    WHEN 7 THEN 'Saturday'\r\n",
+        "  END AS day_of_week_label,\r\n",
+        "  hour_of_day,\r\n",
+        "  observations_count,\r\n",
+        "  measured_intervals_count,\r\n",
+        "  avg_update_interval_seconds,\r\n",
+        "  min_update_interval_seconds,\r\n",
+        "  max_update_interval_seconds,\r\n",
+        "  stddev_update_interval_seconds,\r\n",
+        "  distinct_vehicles_count,\r\n",
+        "  distinct_dates_count,\r\n",
+        "  avg_intervals_per_vehicle,\r\n",
+        "  avg_intervals_per_date,\r\n",
+        "  record_created_at\r\n",
+        "FROM main.gold.gold_recurring_update_patterns\r\n",
+        "ORDER BY day_of_week ASC, hour_of_day ASC\r\n"
+      ]
+    },
+    {
+      "name": "33cc44dd",
+      "displayName": "hourly_interval_profile",
+      "queryLines": [
+        "SELECT\r\n",
+        "  hour_of_day,\r\n",
+        "  SUM(observations_count) AS total_observations_count,\r\n",
+        "  SUM(measured_intervals_count) AS total_measured_intervals_count,\r\n",
+        "  CASE\r\n",
+        "    WHEN SUM(measured_intervals_count) = 0 THEN NULL\r\n",
+        "    ELSE SUM(COALESCE(avg_update_interval_seconds, 0.0) * measured_intervals_count) * 1.0 / SUM(measured_intervals_count)\r\n",
+        "  END AS weighted_avg_update_interval_seconds,\r\n",
+        "  AVG(distinct_vehicles_count) AS avg_distinct_vehicles_count,\r\n",
+        "  AVG(distinct_dates_count) AS avg_distinct_dates_count\r\n",
+        "FROM main.gold.gold_recurring_update_patterns\r\n",
+        "GROUP BY hour_of_day\r\n",
+        "ORDER BY hour_of_day ASC\r\n"
+      ]
+    },
+    {
+      "name": "44dd55ee",
+      "displayName": "day_of_week_interval_profile",
+      "queryLines": [
+        "SELECT\r\n",
+        "  day_of_week,\r\n",
+        "  CASE day_of_week\r\n",
+        "    WHEN 1 THEN 'Sunday'\r\n",
+        "    WHEN 2 THEN 'Monday'\r\n",
+        "    WHEN 3 THEN 'Tuesday'\r\n",
+        "    WHEN 4 THEN 'Wednesday'\r\n",
+        "    WHEN 5 THEN 'Thursday'\r\n",
+        "    WHEN 6 THEN 'Friday'\r\n",
+        "    WHEN 7 THEN 'Saturday'\r\n",
+        "  END AS day_of_week_label,\r\n",
+        "  SUM(observations_count) AS total_observations_count,\r\n",
+        "  SUM(measured_intervals_count) AS total_measured_intervals_count,\r\n",
+        "  CASE\r\n",
+        "    WHEN SUM(measured_intervals_count) = 0 THEN NULL\r\n",
+        "    ELSE SUM(COALESCE(avg_update_interval_seconds, 0.0) * measured_intervals_count) * 1.0 / SUM(measured_intervals_count)\r\n",
+        "  END AS weighted_avg_update_interval_seconds,\r\n",
+        "  AVG(distinct_vehicles_count) AS avg_distinct_vehicles_count,\r\n",
+        "  AVG(distinct_dates_count) AS avg_distinct_dates_count\r\n",
+        "FROM main.gold.gold_recurring_update_patterns\r\n",
+        "GROUP BY day_of_week\r\n",
+        "ORDER BY day_of_week ASC\r\n"
+      ]
+    }
+  ],
+  "pages": [
+    {
+      "name": "55ee66ff",
+      "displayName": "Executive Overview",
+      "layout": [
+        {
+          "widget": {
+            "name": "pattern-buckets-count",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "11aa22bb",
+                  "fields": [
+                    {
+                      "name": "latest_refresh_at",
+                      "expression": "`latest_refresh_at`"
+                    },
+                    {
+                      "name": "pattern_buckets_count",
+                      "expression": "`pattern_buckets_count`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "showDescription": true,
+                "title": "Pattern Buckets Count",
+                "description": "Number of populated recurring temporal buckets at day-of-week plus hour-of-day grain."
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "pattern_buckets_count"
+                },
+                "period": {
+                  "fieldName": "latest_refresh_at"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 3,
+            "height": 4
+          }
+        },
+        {
+          "widget": {
+            "name": "total-observations-count",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "11aa22bb",
+                  "fields": [
+                    {
+                      "name": "latest_refresh_at",
+                      "expression": "`latest_refresh_at`"
+                    },
+                    {
+                      "name": "total_observations_count",
+                      "expression": "`total_observations_count`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "showDescription": true,
+                "title": "Total Observations Count",
+                "description": "Total number of observed records contributing to recurring temporal buckets."
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "total_observations_count"
+                },
+                "period": {
+                  "fieldName": "latest_refresh_at"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 3,
+            "y": 0,
+            "width": 3,
+            "height": 4
+          }
+        },
+        {
+          "widget": {
+            "name": "total-measured-intervals-count",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "11aa22bb",
+                  "fields": [
+                    {
+                      "name": "latest_refresh_at",
+                      "expression": "`latest_refresh_at`"
+                    },
+                    {
+                      "name": "total_measured_intervals_count",
+                      "expression": "`total_measured_intervals_count`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "showDescription": true,
+                "title": "Total Measured Intervals Count",
+                "description": "Total number of valid measurable update intervals contributing to recurring temporal buckets."
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "total_measured_intervals_count"
+                },
+                "period": {
+                  "fieldName": "latest_refresh_at"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 0,
+            "width": 3,
+            "height": 4
+          }
+        },
+        {
+          "widget": {
+            "name": "weighted-avg-update-interval-seconds",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "11aa22bb",
+                  "fields": [
+                    {
+                      "name": "latest_refresh_at",
+                      "expression": "`latest_refresh_at`"
+                    },
+                    {
+                      "name": "weighted_avg_update_interval_seconds",
+                      "expression": "`weighted_avg_update_interval_seconds`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "showDescription": true,
+                "title": "Weighted Avg Update Interval (Sec)",
+                "description": "Weighted average observed update interval across all recurring temporal buckets."
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "weighted_avg_update_interval_seconds"
+                },
+                "period": {
+                  "fieldName": "latest_refresh_at"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 9,
+            "y": 0,
+            "width": 3,
+            "height": 4
+          }
+        },
+        {
+          "widget": {
+            "name": "weighted-avg-update-interval-by-hour",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "33cc44dd",
+                  "fields": [
+                    {
+                      "name": "hour_of_day",
+                      "expression": "`hour_of_day`"
+                    },
+                    {
+                      "name": "weighted_avg_update_interval_seconds",
+                      "expression": "`weighted_avg_update_interval_seconds`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Weighted Avg Update Interval by Hour"
+              },
+              "widgetType": "line",
+              "encodings": {
+                "x": {
+                  "fieldName": "hour_of_day",
+                  "axis": {
+                    "title": "Hour of Day"
+                  },
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "y": {
+                  "fieldName": "weighted_avg_update_interval_seconds",
+                  "axis": {
+                    "title": "Weighted Avg Update Interval (Sec)"
+                  },
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 4,
+            "width": 6,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "weighted-avg-update-interval-by-day-of-week",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "44dd55ee",
+                  "fields": [
+                    {
+                      "name": "day_of_week_label",
+                      "expression": "`day_of_week_label`"
+                    },
+                    {
+                      "name": "weighted_avg_update_interval_seconds",
+                      "expression": "`weighted_avg_update_interval_seconds`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Weighted Avg Update Interval by Day of Week"
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "day_of_week_label",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "weighted_avg_update_interval_seconds",
+                  "axis": {
+                    "title": "Weighted Avg Update Interval (Sec)"
+                  },
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "day_of_week_label",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 4,
+            "width": 6,
+            "height": 6
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layoutVersion": "GRID_V1"
+    },
+    {
+      "name": "66ff77aa",
+      "displayName": "Heatmaps and Detail",
+      "layout": [
+        {
+          "widget": {
+            "name": "avg-update-interval-heatmap",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "22bb33cc",
+                  "fields": [
+                    {
+                      "name": "avg_update_interval_seconds",
+                      "expression": "`avg_update_interval_seconds`"
+                    },
+                    {
+                      "name": "hour_of_day",
+                      "expression": "`hour_of_day`"
+                    },
+                    {
+                      "name": "day_of_week_label",
+                      "expression": "`day_of_week_label`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Avg Update Interval Heatmap"
+              },
+              "widgetType": "heatmap",
+              "encodings": {
+                "x": {
+                  "fieldName": "hour_of_day",
+                  "axis": {
+                    "title": "Hour of Day"
+                  },
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "y": {
+                  "fieldName": "day_of_week_label",
+                  "axis": {
+                    "title": "Day of Week"
+                  },
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "color": {
+                  "fieldName": "avg_update_interval_seconds",
+                  "legend": {
+                    "title": "Avg Update Interval (Sec)"
+                  },
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 6,
+            "height": 7
+          }
+        },
+        {
+          "widget": {
+            "name": "observations-count-heatmap",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "22bb33cc",
+                  "fields": [
+                    {
+                      "name": "observations_count",
+                      "expression": "`observations_count`"
+                    },
+                    {
+                      "name": "hour_of_day",
+                      "expression": "`hour_of_day`"
+                    },
+                    {
+                      "name": "day_of_week_label",
+                      "expression": "`day_of_week_label`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Observations Count Heatmap"
+              },
+              "widgetType": "heatmap",
+              "encodings": {
+                "x": {
+                  "fieldName": "hour_of_day",
+                  "axis": {
+                    "title": "Hour of Day"
+                  },
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "y": {
+                  "fieldName": "day_of_week_label",
+                  "axis": {
+                    "title": "Day of Week"
+                  },
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "color": {
+                  "fieldName": "observations_count",
+                  "legend": {
+                    "title": "Observations Count"
+                  },
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 0,
+            "width": 6,
+            "height": 7
+          }
+        },
+        {
+          "widget": {
+            "name": "recurring-patterns-detail-table",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "22bb33cc",
+                  "fields": [
+                    {
+                      "name": "day_of_week",
+                      "expression": "`day_of_week`"
+                    },
+                    {
+                      "name": "day_of_week_label",
+                      "expression": "`day_of_week_label`"
+                    },
+                    {
+                      "name": "hour_of_day",
+                      "expression": "`hour_of_day`"
+                    },
+                    {
+                      "name": "observations_count",
+                      "expression": "`observations_count`"
+                    },
+                    {
+                      "name": "measured_intervals_count",
+                      "expression": "`measured_intervals_count`"
+                    },
+                    {
+                      "name": "avg_update_interval_seconds",
+                      "expression": "`avg_update_interval_seconds`"
+                    },
+                    {
+                      "name": "min_update_interval_seconds",
+                      "expression": "`min_update_interval_seconds`"
+                    },
+                    {
+                      "name": "max_update_interval_seconds",
+                      "expression": "`max_update_interval_seconds`"
+                    },
+                    {
+                      "name": "stddev_update_interval_seconds",
+                      "expression": "`stddev_update_interval_seconds`"
+                    },
+                    {
+                      "name": "distinct_vehicles_count",
+                      "expression": "`distinct_vehicles_count`"
+                    },
+                    {
+                      "name": "distinct_dates_count",
+                      "expression": "`distinct_dates_count`"
+                    },
+                    {
+                      "name": "avg_intervals_per_vehicle",
+                      "expression": "`avg_intervals_per_vehicle`"
+                    },
+                    {
+                      "name": "avg_intervals_per_date",
+                      "expression": "`avg_intervals_per_date`"
+                    }
+                  ],
+                  "disaggregated": true,
+                  "orders": [
+                    {
+                      "direction": "ASC",
+                      "expression": "`day_of_week`"
+                    },
+                    {
+                      "direction": "ASC",
+                      "expression": "`hour_of_day`"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "day_of_week_label",
+                    "displayName": "Day of Week"
+                  },
+                  {
+                    "fieldName": "hour_of_day",
+                    "displayName": "Hour of Day"
+                  },
+                  {
+                    "fieldName": "observations_count",
+                    "displayName": "Observations Count"
+                  },
+                  {
+                    "fieldName": "measured_intervals_count",
+                    "displayName": "Measured Intervals Count"
+                  },
+                  {
+                    "fieldName": "avg_update_interval_seconds",
+                    "displayName": "Avg Update Interval (Sec)"
+                  },
+                  {
+                    "fieldName": "min_update_interval_seconds",
+                    "displayName": "Min Update Interval (Sec)"
+                  },
+                  {
+                    "fieldName": "max_update_interval_seconds",
+                    "displayName": "Max Update Interval (Sec)"
+                  },
+                  {
+                    "fieldName": "stddev_update_interval_seconds",
+                    "displayName": "Stddev Update Interval (Sec)"
+                  },
+                  {
+                    "fieldName": "distinct_vehicles_count",
+                    "displayName": "Distinct Vehicles Count"
+                  },
+                  {
+                    "fieldName": "distinct_dates_count",
+                    "displayName": "Distinct Dates Count"
+                  },
+                  {
+                    "fieldName": "avg_intervals_per_vehicle",
+                    "displayName": "Avg Intervals Per Vehicle"
+                  },
+                  {
+                    "fieldName": "avg_intervals_per_date",
+                    "displayName": "Avg Intervals Per Date"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 7,
+            "width": 12,
+            "height": 7
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layoutVersion": "GRID_V1"
+    }
+  ],
+  "uiSettings": {
+    "theme": {
+      "widgetHeaderAlignment": "ALIGNMENT_UNSPECIFIED"
+    },
+    "applyModeEnabled": false
+  }
+}

@@ -1,0 +1,24 @@
+resources:
+  pipelines:
+    etl_pipeline_quality_silver_planned:
+      name: etl_pipeline_quality_silver_planned
+      catalog: ${var.catalog}
+      schema: ${var.silver_schema}
+      development: true
+      continuous: false
+      channel: CURRENT
+      serverless: true
+
+      environment:
+        dependencies:
+          - ${workspace.artifact_path}/.internal/rws_sptrans_databricks_mec-0.1.0-py3-none-any.whl
+
+      libraries:
+        - glob:
+            include: ../../../src/quality/silver/planned/audits/**
+
+      tags:
+        domain: silver_planned
+        layer: quality
+        source: gtfs
+        component: etl_pipeline_quality_silver_planned

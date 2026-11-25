@@ -1,0 +1,1144 @@
+{
+  "datasets": [
+    {
+      "name": "1a2b3c4d",
+      "displayName": "line_options_by_date",
+      "queryLines": [
+        "SELECT DISTINCT\r\n",
+        "  line_sign\r\n",
+        "FROM main.gold.gold_vehicle_observed_spatial_traces\r\n",
+        "WHERE analysis_date = :p_analysis_date\r\n",
+        "  AND line_sign IS NOT NULL\r\n",
+        "  AND TRIM(line_sign) <> ''\r\n",
+        "ORDER BY line_sign"
+      ],
+      "parameters": [
+        {
+          "displayName": "p_analysis_date",
+          "keyword": "p_analysis_date",
+          "dataType": "DATE",
+          "defaultSelection": {
+            "values": {
+              "dataType": "DATE",
+              "values": [
+                {
+                  "value": "2026-03-18T00:00:00.000"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2b3c4d5e",
+      "displayName": "line_trace_points_base",
+      "queryLines": [
+        "SELECT\r\n",
+        "  analysis_date,\r\n",
+        "  vehicle_prefix,\r\n",
+        "  trace_sequence,\r\n",
+        "  captured_at_local,\r\n",
+        "  latitude,\r\n",
+        "  longitude,\r\n",
+        "  line_sign,\r\n",
+        "  direction,\r\n",
+        "  CASE\r\n",
+        "    WHEN direction = '1' OR direction = 1 THEN 'Main to Secondary'\r\n",
+        "    WHEN direction = '2' OR direction = 2 THEN 'Secondary to Main'\r\n",
+        "    ELSE CAST(direction AS STRING)\r\n",
+        "  END AS direction_description,\r\n",
+        "  previous_captured_at_local,\r\n",
+        "  previous_latitude,\r\n",
+        "  previous_longitude,\r\n",
+        "  CASE\r\n",
+        "    WHEN previous_captured_at_local IS NULL THEN NULL\r\n",
+        "    ELSE unix_timestamp(captured_at_local) - unix_timestamp(previous_captured_at_local)\r\n",
+        "  END AS time_since_previous_seconds\r\n",
+        "FROM main.gold.gold_vehicle_observed_spatial_traces\r\n",
+        "WHERE analysis_date = :p_analysis_date\r\n",
+        "  AND line_sign = :p_line_sign\r\n",
+        "  AND (\r\n",
+        "    :p_captured_at_range.min IS NULL OR :p_captured_at_range.max IS NULL\r\n",
+        "    OR captured_at_local BETWEEN :p_captured_at_range.min AND :p_captured_at_range.max\r\n",
+        "  )\r\n",
+        "ORDER BY vehicle_prefix, trace_sequence"
+      ],
+      "parameters": [
+        {
+          "displayName": "p_analysis_date",
+          "keyword": "p_analysis_date",
+          "dataType": "DATE",
+          "defaultSelection": {
+            "values": {
+              "dataType": "DATE",
+              "values": [
+                {
+                  "value": "2026-03-18T00:00:00.000"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "displayName": "p_line_sign",
+          "keyword": "p_line_sign",
+          "dataType": "STRING",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": [
+                {
+                  "value": "N106-11"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "displayName": "p_captured_at_range",
+          "keyword": "p_captured_at_range",
+          "dataType": "DATETIME",
+          "complexType": "RANGE",
+          "defaultSelection": {
+            "range": {
+              "dataType": "DATETIME"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3c4d5e6f",
+      "displayName": "line_summary",
+      "queryLines": [
+        "WITH base AS (\r\n",
+        "  SELECT\r\n",
+        "    analysis_date,\r\n",
+        "    vehicle_prefix,\r\n",
+        "    captured_at_local,\r\n",
+        "    CASE\r\n",
+        "      WHEN previous_captured_at_local IS NULL THEN NULL\r\n",
+        "      ELSE unix_timestamp(captured_at_local) - unix_timestamp(previous_captured_at_local)\r\n",
+        "    END AS time_since_previous_seconds\r\n",
+        "  FROM main.gold.gold_vehicle_observed_spatial_traces\r\n",
+        "  WHERE analysis_date = :p_analysis_date\r\n",
+        "    AND line_sign = :p_line_sign\r\n",
+        "    AND (\r\n",
+        "      :p_captured_at_range.min IS NULL OR :p_captured_at_range.max IS NULL\r\n",
+        "      OR captured_at_local BETWEEN :p_captured_at_range.min AND :p_captured_at_range.max\r\n",
+        "    )\r\n",
+        ")\r\n",
+        "SELECT\r\n",
+        "  analysis_date,\r\n",
+        "  COUNT(*) AS observed_trace_points_count,\r\n",
+        "  COUNT(DISTINCT vehicle_prefix) AS distinct_observed_vehicles_count,\r\n",
+        "  MIN(captured_at_local) AS first_captured_at_local,\r\n",
+        "  MAX(captured_at_local) AS last_captured_at_local,\r\n",
+        "  AVG(time_since_previous_seconds) AS avg_gap_seconds,\r\n",
+        "  MAX(time_since_previous_seconds) AS max_gap_seconds\r\n",
+        "FROM base\r\n",
+        "GROUP BY analysis_date"
+      ],
+      "parameters": [
+        {
+          "displayName": "p_analysis_date",
+          "keyword": "p_analysis_date",
+          "dataType": "DATE",
+          "defaultSelection": {
+            "values": {
+              "dataType": "DATE",
+              "values": [
+                {
+                  "value": "2026-03-18T00:00:00.000"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "displayName": "p_line_sign",
+          "keyword": "p_line_sign",
+          "dataType": "STRING",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": [
+                {
+                  "value": "N106-11"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "displayName": "p_captured_at_range",
+          "keyword": "p_captured_at_range",
+          "dataType": "DATETIME",
+          "complexType": "RANGE",
+          "defaultSelection": {
+            "range": {
+              "dataType": "DATETIME"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4d5e6f70",
+      "displayName": "line_hourly_activity",
+      "queryLines": [
+        "SELECT\r\n",
+        "  analysis_date,\r\n",
+        "  hour(captured_at_local) AS analysis_hour_local,\r\n",
+        "  COUNT(*) AS observed_trace_points_count,\r\n",
+        "  COUNT(DISTINCT vehicle_prefix) AS distinct_observed_vehicles_count\r\n",
+        "FROM main.gold.gold_vehicle_observed_spatial_traces\r\n",
+        "WHERE analysis_date = :p_analysis_date\r\n",
+        "  AND line_sign = :p_line_sign\r\n",
+        "  AND (\r\n",
+        "    :p_captured_at_range.min IS NULL OR :p_captured_at_range.max IS NULL\r\n",
+        "    OR captured_at_local BETWEEN :p_captured_at_range.min AND :p_captured_at_range.max\r\n",
+        "  )\r\n",
+        "GROUP BY analysis_date, hour(captured_at_local)\r\n",
+        "ORDER BY analysis_hour_local"
+      ],
+      "parameters": [
+        {
+          "displayName": "p_analysis_date",
+          "keyword": "p_analysis_date",
+          "dataType": "DATE",
+          "defaultSelection": {
+            "values": {
+              "dataType": "DATE",
+              "values": [
+                {
+                  "value": "2026-03-18T00:00:00.000"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "displayName": "p_line_sign",
+          "keyword": "p_line_sign",
+          "dataType": "STRING",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": [
+                {
+                  "value": "N106-11"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "displayName": "p_captured_at_range",
+          "keyword": "p_captured_at_range",
+          "dataType": "DATETIME",
+          "complexType": "RANGE",
+          "defaultSelection": {
+            "range": {
+              "dataType": "DATETIME"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5e6f7081",
+      "displayName": "line_vehicle_summary",
+      "queryLines": [
+        "SELECT\r\n",
+        "  analysis_date,\r\n",
+        "  vehicle_prefix,\r\n",
+        "  COUNT(*) AS trace_points_count,\r\n",
+        "  MIN(captured_at_local) AS first_captured_at_local,\r\n",
+        "  MAX(captured_at_local) AS last_captured_at_local\r\n",
+        "FROM main.gold.gold_vehicle_observed_spatial_traces\r\n",
+        "WHERE analysis_date = :p_analysis_date\r\n",
+        "  AND line_sign = :p_line_sign\r\n",
+        "  AND (\r\n",
+        "    :p_captured_at_range.min IS NULL OR :p_captured_at_range.max IS NULL\r\n",
+        "    OR captured_at_local BETWEEN :p_captured_at_range.min AND :p_captured_at_range.max\r\n",
+        "  )\r\n",
+        "GROUP BY analysis_date, vehicle_prefix\r\n",
+        "ORDER BY trace_points_count DESC, vehicle_prefix ASC"
+      ],
+      "parameters": [
+        {
+          "displayName": "p_analysis_date",
+          "keyword": "p_analysis_date",
+          "dataType": "DATE",
+          "defaultSelection": {
+            "values": {
+              "dataType": "DATE",
+              "values": [
+                {
+                  "value": "2026-03-18T00:00:00.000"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "displayName": "p_line_sign",
+          "keyword": "p_line_sign",
+          "dataType": "STRING",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": [
+                {
+                  "value": "N106-11"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "displayName": "p_captured_at_range",
+          "keyword": "p_captured_at_range",
+          "dataType": "DATETIME",
+          "complexType": "RANGE",
+          "defaultSelection": {
+            "range": {
+              "dataType": "DATETIME"
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "pages": [
+    {
+      "name": "6f708192",
+      "displayName": "Line Activity Explorer",
+      "layout": [
+        {
+          "widget": {
+            "name": "observed-trace-points",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "3c4d5e6f",
+                  "fields": [
+                    {
+                      "name": "analysis_date",
+                      "expression": "`analysis_date`"
+                    },
+                    {
+                      "name": "observed_trace_points_count",
+                      "expression": "`observed_trace_points_count`"
+                    }
+                  ],
+                  "disaggregated": true,
+                  "orders": [
+                    {
+                      "direction": "DESC",
+                      "expression": "`analysis_date`"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Observed Trace Points",
+                "headerAlignment": "center"
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "observed_trace_points_count"
+                },
+                "period": {
+                  "fieldName": "analysis_date"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 3,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "distinct-observed-vehicles",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "3c4d5e6f",
+                  "fields": [
+                    {
+                      "name": "analysis_date",
+                      "expression": "`analysis_date`"
+                    },
+                    {
+                      "name": "distinct_observed_vehicles_count",
+                      "expression": "`distinct_observed_vehicles_count`"
+                    }
+                  ],
+                  "disaggregated": true,
+                  "orders": [
+                    {
+                      "direction": "DESC",
+                      "expression": "`analysis_date`"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Distinct Observed Vehicles",
+                "headerAlignment": "center"
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "distinct_observed_vehicles_count"
+                },
+                "period": {
+                  "fieldName": "analysis_date"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 3,
+            "y": 0,
+            "width": 3,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "first-observed-timestamp",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "3c4d5e6f",
+                  "fields": [
+                    {
+                      "name": "analysis_date",
+                      "expression": "`analysis_date`"
+                    },
+                    {
+                      "name": "first_captured_at_local",
+                      "expression": "`first_captured_at_local`"
+                    }
+                  ],
+                  "disaggregated": true,
+                  "orders": [
+                    {
+                      "direction": "DESC",
+                      "expression": "`analysis_date`"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "First Observed Timestamp",
+                "headerAlignment": "center"
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "first_captured_at_local"
+                },
+                "period": {
+                  "fieldName": "analysis_date"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 0,
+            "width": 3,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "last-observed-timestamp",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "3c4d5e6f",
+                  "fields": [
+                    {
+                      "name": "analysis_date",
+                      "expression": "`analysis_date`"
+                    },
+                    {
+                      "name": "last_captured_at_local",
+                      "expression": "`last_captured_at_local`"
+                    }
+                  ],
+                  "disaggregated": true,
+                  "orders": [
+                    {
+                      "direction": "DESC",
+                      "expression": "`analysis_date`"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Last Observed Timestamp",
+                "headerAlignment": "center"
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "last_captured_at_local"
+                },
+                "period": {
+                  "fieldName": "analysis_date"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 9,
+            "y": 0,
+            "width": 3,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "hourly-trace-points",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "4d5e6f70",
+                  "fields": [
+                    {
+                      "name": "analysis_hour_local",
+                      "expression": "`analysis_hour_local`"
+                    },
+                    {
+                      "name": "observed_trace_points_count",
+                      "expression": "`observed_trace_points_count`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Hourly Observed Trace Points"
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "analysis_hour_local",
+                  "axis": {
+                    "title": "Local Hour"
+                  },
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "y": {
+                  "fieldName": "observed_trace_points_count",
+                  "axis": {
+                    "title": "Observed Trace Points"
+                  },
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 2,
+            "width": 6,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "hourly-distinct-vehicles",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "4d5e6f70",
+                  "fields": [
+                    {
+                      "name": "analysis_hour_local",
+                      "expression": "`analysis_hour_local`"
+                    },
+                    {
+                      "name": "distinct_observed_vehicles_count",
+                      "expression": "`distinct_observed_vehicles_count`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Hourly Distinct Observed Vehicles"
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "analysis_hour_local",
+                  "axis": {
+                    "title": "Local Hour"
+                  },
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "y": {
+                  "fieldName": "distinct_observed_vehicles_count",
+                  "axis": {
+                    "title": "Distinct Observed Vehicles"
+                  },
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 2,
+            "width": 6,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "line-activity-map",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "2b3c4d5e",
+                  "fields": [
+                    {
+                      "name": "direction_description",
+                      "expression": "`direction_description`"
+                    },
+                    {
+                      "name": "latitude",
+                      "expression": "`latitude`"
+                    },
+                    {
+                      "name": "longitude",
+                      "expression": "`longitude`"
+                    },
+                    {
+                      "name": "vehicle_prefix",
+                      "expression": "`vehicle_prefix`"
+                    },
+                    {
+                      "name": "trace_sequence",
+                      "expression": "`trace_sequence`"
+                    },
+                    {
+                      "name": "captured_at_local",
+                      "expression": "`captured_at_local`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "symbol-map",
+              "encodings": {
+                "coordinates": {
+                  "latitude": {
+                    "fieldName": "latitude"
+                  },
+                  "longitude": {
+                    "fieldName": "longitude"
+                  }
+                },
+                "color": {
+                  "fieldName": "direction_description",
+                  "legend": {
+                    "title": "Direction"
+                  },
+                  "scale": {
+                    "type": "categorical",
+                    "mappings": [
+                      {
+                        "value": "Main to Secondary",
+                        "color": {
+                          "themeColorType": "visualizationColors",
+                          "position": 1
+                        }
+                      },
+                      {
+                        "value": "Secondary to Main",
+                        "color": {
+                          "themeColorType": "visualizationColors",
+                          "position": 7
+                        }
+                      }
+                    ]
+                  }
+                },
+                "extra": [
+                  {
+                    "fieldName": "vehicle_prefix"
+                  },
+                  {
+                    "fieldName": "trace_sequence"
+                  },
+                  {
+                    "fieldName": "captured_at_local"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 8,
+            "width": 12,
+            "height": 10
+          }
+        },
+        {
+          "widget": {
+            "name": "line-vehicle-summary",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "5e6f7081",
+                  "fields": [
+                    {
+                      "name": "vehicle_prefix",
+                      "expression": "`vehicle_prefix`"
+                    },
+                    {
+                      "name": "trace_points_count",
+                      "expression": "`trace_points_count`"
+                    },
+                    {
+                      "name": "first_captured_at_local",
+                      "expression": "`first_captured_at_local`"
+                    },
+                    {
+                      "name": "last_captured_at_local",
+                      "expression": "`last_captured_at_local`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "vehicle_prefix",
+                    "displayName": "Vehicle Prefix"
+                  },
+                  {
+                    "fieldName": "trace_points_count",
+                    "displayName": "Trace Points"
+                  },
+                  {
+                    "fieldName": "first_captured_at_local",
+                    "displayName": "First Captured at Local"
+                  },
+                  {
+                    "fieldName": "last_captured_at_local",
+                    "displayName": "Last Captured at Local"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 18,
+            "width": 12,
+            "height": 6
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layoutVersion": "GRID_V1"
+    },
+    {
+      "name": "708192a3",
+      "displayName": "Global Filters",
+      "layout": [
+        {
+          "widget": {
+            "name": "analysis-date",
+            "queries": [
+              {
+                "name": "parameter_dashboards/line_activity/datasets/line_options_by_date_p_analysis_date",
+                "query": {
+                  "datasetName": "1a2b3c4d",
+                  "parameters": [
+                    {
+                      "name": "p_analysis_date",
+                      "keyword": "p_analysis_date"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "parameter_dashboards/line_activity/datasets/line_trace_points_base_p_analysis_date",
+                "query": {
+                  "datasetName": "2b3c4d5e",
+                  "parameters": [
+                    {
+                      "name": "p_analysis_date",
+                      "keyword": "p_analysis_date"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "parameter_dashboards/line_activity/datasets/line_summary_p_analysis_date",
+                "query": {
+                  "datasetName": "3c4d5e6f",
+                  "parameters": [
+                    {
+                      "name": "p_analysis_date",
+                      "keyword": "p_analysis_date"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "parameter_dashboards/line_activity/datasets/line_hourly_activity_p_analysis_date",
+                "query": {
+                  "datasetName": "4d5e6f70",
+                  "parameters": [
+                    {
+                      "name": "p_analysis_date",
+                      "keyword": "p_analysis_date"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "parameter_dashboards/line_activity/datasets/line_vehicle_summary_p_analysis_date",
+                "query": {
+                  "datasetName": "5e6f7081",
+                  "parameters": [
+                    {
+                      "name": "p_analysis_date",
+                      "keyword": "p_analysis_date"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "showDescription": false,
+                "description": "",
+                "title": "Analysis Date"
+              },
+              "widgetType": "filter-date-picker",
+              "encodings": {
+                "fields": [
+                  {
+                    "parameterName": "p_analysis_date",
+                    "queryName": "parameter_dashboards/line_activity/datasets/line_options_by_date_p_analysis_date"
+                  },
+                  {
+                    "parameterName": "p_analysis_date",
+                    "queryName": "parameter_dashboards/line_activity/datasets/line_trace_points_base_p_analysis_date"
+                  },
+                  {
+                    "parameterName": "p_analysis_date",
+                    "queryName": "parameter_dashboards/line_activity/datasets/line_summary_p_analysis_date"
+                  },
+                  {
+                    "parameterName": "p_analysis_date",
+                    "queryName": "parameter_dashboards/line_activity/datasets/line_hourly_activity_p_analysis_date"
+                  },
+                  {
+                    "parameterName": "p_analysis_date",
+                    "queryName": "parameter_dashboards/line_activity/datasets/line_vehicle_summary_p_analysis_date"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 1,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "line-sign",
+            "queries": [
+              {
+                "name": "dashboards/line_activity/datasets/line_options_by_date_line_sign",
+                "query": {
+                  "datasetName": "1a2b3c4d",
+                  "fields": [
+                    {
+                      "name": "line_sign",
+                      "expression": "`line_sign`"
+                    },
+                    {
+                      "name": "line_sign_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "parameter_dashboards/line_activity/datasets/line_trace_points_base_p_line_sign",
+                "query": {
+                  "datasetName": "2b3c4d5e",
+                  "parameters": [
+                    {
+                      "name": "p_line_sign",
+                      "keyword": "p_line_sign"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "parameter_dashboards/line_activity/datasets/line_summary_p_line_sign",
+                "query": {
+                  "datasetName": "3c4d5e6f",
+                  "parameters": [
+                    {
+                      "name": "p_line_sign",
+                      "keyword": "p_line_sign"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "parameter_dashboards/line_activity/datasets/line_hourly_activity_p_line_sign",
+                "query": {
+                  "datasetName": "4d5e6f70",
+                  "parameters": [
+                    {
+                      "name": "p_line_sign",
+                      "keyword": "p_line_sign"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "parameter_dashboards/line_activity/datasets/line_vehicle_summary_p_line_sign",
+                "query": {
+                  "datasetName": "5e6f7081",
+                  "parameters": [
+                    {
+                      "name": "p_line_sign",
+                      "keyword": "p_line_sign"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Line Sign"
+              },
+              "widgetType": "filter-single-select",
+              "encodings": {
+                "fields": [
+                  {
+                    "fieldName": "line_sign",
+                    "queryName": "dashboards/line_activity/datasets/line_options_by_date_line_sign"
+                  },
+                  {
+                    "parameterName": "p_line_sign",
+                    "queryName": "parameter_dashboards/line_activity/datasets/line_trace_points_base_p_line_sign"
+                  },
+                  {
+                    "parameterName": "p_line_sign",
+                    "queryName": "parameter_dashboards/line_activity/datasets/line_summary_p_line_sign"
+                  },
+                  {
+                    "parameterName": "p_line_sign",
+                    "queryName": "parameter_dashboards/line_activity/datasets/line_hourly_activity_p_line_sign"
+                  },
+                  {
+                    "parameterName": "p_line_sign",
+                    "queryName": "parameter_dashboards/line_activity/datasets/line_vehicle_summary_p_line_sign"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 2,
+            "width": 1,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "captured-at-local",
+            "queries": [
+              {
+                "name": "parameter_dashboards/line_activity/datasets/line_trace_points_base_p_captured_at_range",
+                "query": {
+                  "datasetName": "2b3c4d5e",
+                  "parameters": [
+                    {
+                      "name": "p_captured_at_range",
+                      "keyword": "p_captured_at_range"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "parameter_dashboards/line_activity/datasets/line_summary_p_captured_at_range",
+                "query": {
+                  "datasetName": "3c4d5e6f",
+                  "parameters": [
+                    {
+                      "name": "p_captured_at_range",
+                      "keyword": "p_captured_at_range"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "parameter_dashboards/line_activity/datasets/line_hourly_activity_p_captured_at_range",
+                "query": {
+                  "datasetName": "4d5e6f70",
+                  "parameters": [
+                    {
+                      "name": "p_captured_at_range",
+                      "keyword": "p_captured_at_range"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "parameter_dashboards/line_activity/datasets/line_vehicle_summary_p_captured_at_range",
+                "query": {
+                  "datasetName": "5e6f7081",
+                  "parameters": [
+                    {
+                      "name": "p_captured_at_range",
+                      "keyword": "p_captured_at_range"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Captured at Local"
+              },
+              "widgetType": "filter-date-range-picker",
+              "encodings": {
+                "fields": [
+                  {
+                    "parameterName": "p_captured_at_range",
+                    "queryName": "parameter_dashboards/line_activity/datasets/line_trace_points_base_p_captured_at_range"
+                  },
+                  {
+                    "parameterName": "p_captured_at_range",
+                    "queryName": "parameter_dashboards/line_activity/datasets/line_summary_p_captured_at_range"
+                  },
+                  {
+                    "parameterName": "p_captured_at_range",
+                    "queryName": "parameter_dashboards/line_activity/datasets/line_hourly_activity_p_captured_at_range"
+                  },
+                  {
+                    "parameterName": "p_captured_at_range",
+                    "queryName": "parameter_dashboards/line_activity/datasets/line_vehicle_summary_p_captured_at_range"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 4,
+            "width": 1,
+            "height": 2
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_GLOBAL_FILTERS",
+      "layoutVersion": "GRID_V1"
+    }
+  ],
+  "uiSettings": {
+    "theme": {
+      "widgetHeaderAlignment": "ALIGNMENT_UNSPECIFIED"
+    },
+    "applyModeEnabled": false
+  }
+}

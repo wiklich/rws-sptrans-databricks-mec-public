@@ -1,0 +1,658 @@
+{
+  "datasets": [
+    {
+      "name": "11aa22bb",
+      "displayName": "hourly_missed_service_heatmap",
+      "queryLines": [
+        "SELECT\r\n",
+        "  hour,\r\n",
+        "  line_sign,\r\n",
+        "  SUM(CASE WHEN planned_service_present_flag THEN 1 ELSE 0 END) AS planned_service_hours,\r\n",
+        "  SUM(CASE WHEN observed_service_present_flag THEN 1 ELSE 0 END) AS observed_service_hours,\r\n",
+        "  SUM(CASE WHEN missed_service_flag THEN 1 ELSE 0 END) AS missed_service_windows,\r\n",
+        "  CASE\r\n",
+        "    WHEN SUM(CASE WHEN planned_service_present_flag THEN 1 ELSE 0 END) = 0 THEN NULL\r\n",
+        "    ELSE SUM(CASE WHEN missed_service_flag THEN 1 ELSE 0 END) * 1.0\r\n",
+        "         / SUM(CASE WHEN planned_service_present_flag THEN 1 ELSE 0 END)\r\n",
+        "  END AS missed_service_rate\r\n",
+        "FROM main.gold.gold_planned_vs_observed_service_adherence_hourly\r\n",
+        "WHERE (\r\n",
+        "    :p_service_date_range.min IS NULL\r\n",
+        "    OR :p_service_date_range.max IS NULL\r\n",
+        "    OR service_date BETWEEN CAST(:p_service_date_range.min AS DATE)\r\n",
+        "                        AND CAST(:p_service_date_range.max AS DATE)\r\n",
+        "  )\r\n",
+        "  AND (\r\n",
+        "    :p_gtfs_direction_id = 'ALL'\r\n",
+        "    OR CAST(gtfs_direction_id AS STRING) = :p_gtfs_direction_id\r\n",
+        "  )\r\n",
+        "GROUP BY hour, line_sign\r\n",
+        "HAVING SUM(CASE WHEN planned_service_present_flag THEN 1 ELSE 0 END) > 0\r\n",
+        "ORDER BY line_sign, hour\r\n"
+      ],
+      "parameters": [
+        {
+          "displayName": "Service Date Range",
+          "keyword": "p_service_date_range",
+          "dataType": "DATE",
+          "complexType": "RANGE",
+          "defaultSelection": {
+            "range": {
+              "dataType": "DATE",
+              "min": {
+                "value": "2026-03-18T00:00:00.000"
+              },
+              "max": {
+                "value": "2026-03-18T00:00:00.000"
+              }
+            }
+          }
+        },
+        {
+          "displayName": "GTFS Direction",
+          "keyword": "p_gtfs_direction_id",
+          "dataType": "STRING",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": [
+                {
+                  "value": "ALL"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "22bb33cc",
+      "displayName": "hourly_headway_deviation_heatmap",
+      "queryLines": [
+        "SELECT\r\n",
+        "  hour,\r\n",
+        "  line_sign,\r\n",
+        "  AVG(planned_headway_minutes) AS avg_planned_headway_minutes,\r\n",
+        "  AVG(observed_headway_avg_minutes) AS avg_observed_headway_avg_minutes,\r\n",
+        "  AVG(headway_deviation_minutes) AS avg_headway_deviation_minutes,\r\n",
+        "  AVG(headway_deviation_pct) AS avg_headway_deviation_pct\r\n",
+        "FROM main.gold.gold_planned_vs_observed_service_adherence_hourly\r\n",
+        "WHERE (\r\n",
+        "    :p_service_date_range.min IS NULL\r\n",
+        "    OR :p_service_date_range.max IS NULL\r\n",
+        "    OR service_date BETWEEN CAST(:p_service_date_range.min AS DATE)\r\n",
+        "                        AND CAST(:p_service_date_range.max AS DATE)\r\n",
+        "  )\r\n",
+        "  AND (\r\n",
+        "    :p_gtfs_direction_id = 'ALL'\r\n",
+        "    OR CAST(gtfs_direction_id AS STRING) = :p_gtfs_direction_id\r\n",
+        "  )\r\n",
+        "GROUP BY hour, line_sign\r\n",
+        "HAVING AVG(headway_deviation_minutes) IS NOT NULL\r\n",
+        "ORDER BY line_sign, hour\r\n"
+      ],
+      "parameters": [
+        {
+          "displayName": "Service Date Range",
+          "keyword": "p_service_date_range",
+          "dataType": "DATE",
+          "complexType": "RANGE",
+          "defaultSelection": {
+            "range": {
+              "dataType": "DATE",
+              "min": {
+                "value": "2026-03-18T00:00:00.000"
+              },
+              "max": {
+                "value": "2026-03-18T00:00:00.000"
+              }
+            }
+          }
+        },
+        {
+          "displayName": "GTFS Direction",
+          "keyword": "p_gtfs_direction_id",
+          "dataType": "STRING",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": [
+                {
+                  "value": "ALL"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "33cc44dd",
+      "displayName": "hourly_detail_table",
+      "queryLines": [
+        "SELECT\r\n",
+        "  line_sign,\r\n",
+        "  gtfs_direction_id,\r\n",
+        "  hour,\r\n",
+        "  SUM(CASE WHEN planned_service_present_flag THEN 1 ELSE 0 END) AS planned_service_hours,\r\n",
+        "  SUM(CASE WHEN observed_service_present_flag THEN 1 ELSE 0 END) AS observed_service_hours,\r\n",
+        "  SUM(CASE WHEN missed_service_flag THEN 1 ELSE 0 END) AS missed_service_windows,\r\n",
+        "  CASE\r\n",
+        "    WHEN SUM(CASE WHEN planned_service_present_flag THEN 1 ELSE 0 END) = 0 THEN NULL\r\n",
+        "    ELSE SUM(CASE WHEN missed_service_flag THEN 1 ELSE 0 END) * 1.0\r\n",
+        "         / SUM(CASE WHEN planned_service_present_flag THEN 1 ELSE 0 END)\r\n",
+        "  END AS missed_service_rate,\r\n",
+        "  AVG(planned_headway_minutes) AS avg_planned_headway_minutes,\r\n",
+        "  AVG(observed_headway_avg_minutes) AS avg_observed_headway_avg_minutes,\r\n",
+        "  AVG(headway_deviation_minutes) AS avg_headway_deviation_minutes,\r\n",
+        "  AVG(headway_deviation_pct) AS avg_headway_deviation_pct\r\n",
+        "FROM main.gold.gold_planned_vs_observed_service_adherence_hourly\r\n",
+        "WHERE (\r\n",
+        "    :p_service_date_range.min IS NULL\r\n",
+        "    OR :p_service_date_range.max IS NULL\r\n",
+        "    OR service_date BETWEEN CAST(:p_service_date_range.min AS DATE)\r\n",
+        "                        AND CAST(:p_service_date_range.max AS DATE)\r\n",
+        "  )\r\n",
+        "  AND (\r\n",
+        "    :p_gtfs_direction_id = 'ALL'\r\n",
+        "    OR CAST(gtfs_direction_id AS STRING) = :p_gtfs_direction_id\r\n",
+        "  )\r\n",
+        "GROUP BY line_sign, gtfs_direction_id, hour\r\n",
+        "ORDER BY missed_service_rate DESC NULLS LAST,\r\n",
+        "         avg_headway_deviation_minutes DESC NULLS LAST,\r\n",
+        "         line_sign ASC,\r\n",
+        "         hour ASC\r\n",
+        "LIMIT 250\r\n"
+      ],
+      "parameters": [
+        {
+          "displayName": "Service Date Range",
+          "keyword": "p_service_date_range",
+          "dataType": "DATE",
+          "complexType": "RANGE",
+          "defaultSelection": {
+            "range": {
+              "dataType": "DATE",
+              "min": {
+                "value": "2026-03-18T00:00:00.000"
+              },
+              "max": {
+                "value": "2026-03-18T00:00:00.000"
+              }
+            }
+          }
+        },
+        {
+          "displayName": "GTFS Direction",
+          "keyword": "p_gtfs_direction_id",
+          "dataType": "STRING",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": [
+                {
+                  "value": "ALL"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "44dd55ee",
+      "displayName": "direction_options",
+      "queryLines": [
+        "SELECT\r\n",
+        "  gtfs_direction_id\r\n",
+        "FROM (\r\n",
+        "  SELECT 'ALL' AS gtfs_direction_id, 0 AS sort_order\r\n",
+        "  UNION ALL\r\n",
+        "  SELECT DISTINCT CAST(gtfs_direction_id AS STRING) AS gtfs_direction_id, 1 AS sort_order\r\n",
+        "  FROM main.gold.gold_planned_vs_observed_service_adherence_hourly\r\n",
+        "  WHERE gtfs_direction_id IS NOT NULL\r\n",
+        ") options\r\n",
+        "ORDER BY sort_order, gtfs_direction_id\r\n"
+      ]
+    }
+  ],
+  "pages": [
+    {
+      "name": "55ee66ff",
+      "displayName": "Hourly Adherence Heatmap",
+      "layout": [
+        {
+          "widget": {
+            "name": "missed-service-rate-heatmap",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "11aa22bb",
+                  "fields": [
+                    {
+                      "name": "sum(missed_service_rate)",
+                      "expression": "SUM(`missed_service_rate`)"
+                    },
+                    {
+                      "name": "hour",
+                      "expression": "`hour`"
+                    },
+                    {
+                      "name": "line_sign",
+                      "expression": "`line_sign`"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Missed Service Rate by Line and Hour"
+              },
+              "widgetType": "heatmap",
+              "encodings": {
+                "x": {
+                  "fieldName": "hour",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "y": {
+                  "fieldName": "line_sign",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "color": {
+                  "fieldName": "sum(missed_service_rate)",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 6,
+            "height": 7
+          }
+        },
+        {
+          "widget": {
+            "name": "headway-deviation-heatmap",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "22bb33cc",
+                  "fields": [
+                    {
+                      "name": "sum(avg_headway_deviation_minutes)",
+                      "expression": "SUM(`avg_headway_deviation_minutes`)"
+                    },
+                    {
+                      "name": "hour",
+                      "expression": "`hour`"
+                    },
+                    {
+                      "name": "line_sign",
+                      "expression": "`line_sign`"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Avg Headway Deviation (Min) by Line and Hour"
+              },
+              "widgetType": "heatmap",
+              "encodings": {
+                "x": {
+                  "fieldName": "hour",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "y": {
+                  "fieldName": "line_sign",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "color": {
+                  "fieldName": "sum(avg_headway_deviation_minutes)",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 0,
+            "width": 6,
+            "height": 7
+          }
+        },
+        {
+          "widget": {
+            "name": "line-hour-detail-table",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "33cc44dd",
+                  "fields": [
+                    {
+                      "name": "line_sign",
+                      "expression": "`line_sign`"
+                    },
+                    {
+                      "name": "gtfs_direction_id",
+                      "expression": "`gtfs_direction_id`"
+                    },
+                    {
+                      "name": "hour",
+                      "expression": "`hour`"
+                    },
+                    {
+                      "name": "planned_service_hours",
+                      "expression": "`planned_service_hours`"
+                    },
+                    {
+                      "name": "observed_service_hours",
+                      "expression": "`observed_service_hours`"
+                    },
+                    {
+                      "name": "missed_service_windows",
+                      "expression": "`missed_service_windows`"
+                    },
+                    {
+                      "name": "missed_service_rate",
+                      "expression": "`missed_service_rate`"
+                    },
+                    {
+                      "name": "avg_planned_headway_minutes",
+                      "expression": "`avg_planned_headway_minutes`"
+                    },
+                    {
+                      "name": "avg_observed_headway_avg_minutes",
+                      "expression": "`avg_observed_headway_avg_minutes`"
+                    },
+                    {
+                      "name": "avg_headway_deviation_minutes",
+                      "expression": "`avg_headway_deviation_minutes`"
+                    },
+                    {
+                      "name": "avg_headway_deviation_pct",
+                      "expression": "`avg_headway_deviation_pct`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "line_sign",
+                    "displayName": "Line Sign"
+                  },
+                  {
+                    "fieldName": "gtfs_direction_id",
+                    "displayName": "GTFS Direction"
+                  },
+                  {
+                    "fieldName": "hour",
+                    "displayName": "Hour"
+                  },
+                  {
+                    "fieldName": "planned_service_hours",
+                    "displayName": "Planned Service Hours"
+                  },
+                  {
+                    "fieldName": "observed_service_hours",
+                    "displayName": "Observed Service Hours"
+                  },
+                  {
+                    "fieldName": "missed_service_windows",
+                    "displayName": "Missed Service Windows"
+                  },
+                  {
+                    "fieldName": "missed_service_rate",
+                    "displayName": "Missed Service Rate"
+                  },
+                  {
+                    "fieldName": "avg_planned_headway_minutes",
+                    "displayName": "Avg Planned Headway (Min)"
+                  },
+                  {
+                    "fieldName": "avg_observed_headway_avg_minutes",
+                    "displayName": "Avg Observed Headway (Min)"
+                  },
+                  {
+                    "fieldName": "avg_headway_deviation_minutes",
+                    "displayName": "Avg Headway Deviation (Min)"
+                  },
+                  {
+                    "fieldName": "avg_headway_deviation_pct",
+                    "displayName": "Avg Headway Deviation (%)"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 7,
+            "width": 12,
+            "height": 6
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layoutVersion": "GRID_V1"
+    },
+    {
+      "name": "66ff77aa",
+      "displayName": "Global Filters",
+      "layout": [
+        {
+          "widget": {
+            "name": "service-date-range",
+            "queries": [
+              {
+                "name": "parameter_dashboards/hourly_adherence_heatmap/datasets/hourly_missed_service_heatmap_p_service_date_range",
+                "query": {
+                  "datasetName": "11aa22bb",
+                  "parameters": [
+                    {
+                      "name": "p_service_date_range",
+                      "keyword": "p_service_date_range"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "parameter_dashboards/hourly_adherence_heatmap/datasets/hourly_headway_deviation_heatmap_p_service_date_range",
+                "query": {
+                  "datasetName": "22bb33cc",
+                  "parameters": [
+                    {
+                      "name": "p_service_date_range",
+                      "keyword": "p_service_date_range"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "parameter_dashboards/hourly_adherence_heatmap/datasets/hourly_detail_table_p_service_date_range",
+                "query": {
+                  "datasetName": "33cc44dd",
+                  "parameters": [
+                    {
+                      "name": "p_service_date_range",
+                      "keyword": "p_service_date_range"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Service Date Range"
+              },
+              "widgetType": "filter-date-range-picker",
+              "encodings": {
+                "fields": [
+                  {
+                    "parameterName": "p_service_date_range",
+                    "queryName": "parameter_dashboards/hourly_adherence_heatmap/datasets/hourly_missed_service_heatmap_p_service_date_range"
+                  },
+                  {
+                    "parameterName": "p_service_date_range",
+                    "queryName": "parameter_dashboards/hourly_adherence_heatmap/datasets/hourly_headway_deviation_heatmap_p_service_date_range"
+                  },
+                  {
+                    "parameterName": "p_service_date_range",
+                    "queryName": "parameter_dashboards/hourly_adherence_heatmap/datasets/hourly_detail_table_p_service_date_range"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 1,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "gtfs-direction-id",
+            "queries": [
+              {
+                "name": "dashboards/hourly_adherence_heatmap/datasets/direction_options_gtfs_direction_id",
+                "query": {
+                  "datasetName": "44dd55ee",
+                  "fields": [
+                    {
+                      "name": "gtfs_direction_id",
+                      "expression": "`gtfs_direction_id`"
+                    },
+                    {
+                      "name": "gtfs_direction_id_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "parameter_dashboards/hourly_adherence_heatmap/datasets/hourly_missed_service_heatmap_p_gtfs_direction_id",
+                "query": {
+                  "datasetName": "11aa22bb",
+                  "parameters": [
+                    {
+                      "name": "p_gtfs_direction_id",
+                      "keyword": "p_gtfs_direction_id"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "parameter_dashboards/hourly_adherence_heatmap/datasets/hourly_headway_deviation_heatmap_p_gtfs_direction_id",
+                "query": {
+                  "datasetName": "22bb33cc",
+                  "parameters": [
+                    {
+                      "name": "p_gtfs_direction_id",
+                      "keyword": "p_gtfs_direction_id"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "parameter_dashboards/hourly_adherence_heatmap/datasets/hourly_detail_table_p_gtfs_direction_id",
+                "query": {
+                  "datasetName": "33cc44dd",
+                  "parameters": [
+                    {
+                      "name": "p_gtfs_direction_id",
+                      "keyword": "p_gtfs_direction_id"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "GTFS Direction"
+              },
+              "widgetType": "filter-single-select",
+              "encodings": {
+                "fields": [
+                  {
+                    "fieldName": "gtfs_direction_id",
+                    "queryName": "dashboards/hourly_adherence_heatmap/datasets/direction_options_gtfs_direction_id"
+                  },
+                  {
+                    "parameterName": "p_gtfs_direction_id",
+                    "queryName": "parameter_dashboards/hourly_adherence_heatmap/datasets/hourly_missed_service_heatmap_p_gtfs_direction_id"
+                  },
+                  {
+                    "parameterName": "p_gtfs_direction_id",
+                    "queryName": "parameter_dashboards/hourly_adherence_heatmap/datasets/hourly_headway_deviation_heatmap_p_gtfs_direction_id"
+                  },
+                  {
+                    "parameterName": "p_gtfs_direction_id",
+                    "queryName": "parameter_dashboards/hourly_adherence_heatmap/datasets/hourly_detail_table_p_gtfs_direction_id"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 2,
+            "width": 1,
+            "height": 2
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_GLOBAL_FILTERS",
+      "layoutVersion": "GRID_V1"
+    }
+  ],
+  "uiSettings": {
+    "theme": {
+      "widgetHeaderAlignment": "ALIGNMENT_UNSPECIFIED"
+    },
+    "applyModeEnabled": false
+  }
+}

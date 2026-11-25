@@ -1,0 +1,937 @@
+{
+  "datasets": [
+    {
+      "name": "a71b82c3",
+      "displayName": "vehicle_multi_day_summary",
+      "queryLines": [
+        "SELECT\r\n",
+        "  MAX(record_created_at) AS latest_refresh_at,\r\n",
+        "  COUNT(*) AS vehicles_count,\r\n",
+        "  AVG(observed_dates_count) AS avg_observed_dates_count,\r\n",
+        "  AVG(observed_date_span_days) AS avg_observed_date_span_days,\r\n",
+        "  AVG(missing_dates_within_span_count) AS avg_missing_dates_within_span_count,\r\n",
+        "  AVG(date_presence_ratio) AS avg_date_presence_ratio,\r\n",
+        "  SUM(total_observations_count) AS total_observations_count,\r\n",
+        "  AVG(avg_observations_per_observed_date) AS avg_observations_per_observed_date,\r\n",
+        "  AVG(max_consecutive_observed_dates) AS avg_max_consecutive_observed_dates,\r\n",
+        "  AVG(max_consecutive_missing_dates_within_span) AS avg_max_consecutive_missing_dates_within_span\r\n",
+        "FROM main.gold.gold_vehicle_multi_day_continuity\r\n",
+        "WHERE (\r\n",
+        "    :p_vehicle_prefix = 'ALL'\r\n",
+        "    OR CAST(vehicle_prefix AS STRING) = :p_vehicle_prefix\r\n",
+        "  )\r\n"
+      ],
+      "parameters": [
+        {
+          "displayName": "Vehicle Prefix",
+          "keyword": "p_vehicle_prefix",
+          "dataType": "STRING",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": [
+                {
+                  "value": "ALL"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "b82c93d4",
+      "displayName": "most_fragmented_multi_day_vehicles",
+      "queryLines": [
+        "SELECT\r\n",
+        "  CAST(vehicle_prefix AS STRING) AS vehicle_prefix,\r\n",
+        "  observed_dates_count,\r\n",
+        "  observed_date_span_days,\r\n",
+        "  missing_dates_within_span_count,\r\n",
+        "  date_presence_ratio,\r\n",
+        "  total_observations_count,\r\n",
+        "  avg_observations_per_observed_date,\r\n",
+        "  max_consecutive_observed_dates,\r\n",
+        "  max_consecutive_missing_dates_within_span\r\n",
+        "FROM main.gold.gold_vehicle_multi_day_continuity\r\n",
+        "WHERE (\r\n",
+        "    :p_vehicle_prefix = 'ALL'\r\n",
+        "    OR CAST(vehicle_prefix AS STRING) = :p_vehicle_prefix\r\n",
+        "  )\r\n",
+        "ORDER BY date_presence_ratio ASC, missing_dates_within_span_count DESC, vehicle_prefix ASC\r\n",
+        "LIMIT 15\r\n"
+      ],
+      "parameters": [
+        {
+          "displayName": "Vehicle Prefix",
+          "keyword": "p_vehicle_prefix",
+          "dataType": "STRING",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": [
+                {
+                  "value": "ALL"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "c93d04e5",
+      "displayName": "most_consistent_multi_day_vehicles",
+      "queryLines": [
+        "SELECT\r\n",
+        "  CAST(vehicle_prefix AS STRING) AS vehicle_prefix,\r\n",
+        "  observed_dates_count,\r\n",
+        "  observed_date_span_days,\r\n",
+        "  missing_dates_within_span_count,\r\n",
+        "  date_presence_ratio,\r\n",
+        "  total_observations_count,\r\n",
+        "  avg_observations_per_observed_date,\r\n",
+        "  max_consecutive_observed_dates,\r\n",
+        "  max_consecutive_missing_dates_within_span\r\n",
+        "FROM main.gold.gold_vehicle_multi_day_continuity\r\n",
+        "WHERE (\r\n",
+        "    :p_vehicle_prefix = 'ALL'\r\n",
+        "    OR CAST(vehicle_prefix AS STRING) = :p_vehicle_prefix\r\n",
+        "  )\r\n",
+        "ORDER BY date_presence_ratio DESC, max_consecutive_observed_dates DESC, vehicle_prefix ASC\r\n",
+        "LIMIT 15\r\n"
+      ],
+      "parameters": [
+        {
+          "displayName": "Vehicle Prefix",
+          "keyword": "p_vehicle_prefix",
+          "dataType": "STRING",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": [
+                {
+                  "value": "ALL"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "d04e15f6",
+      "displayName": "span_vs_presence_scatter",
+      "queryLines": [
+        "SELECT\r\n",
+        "  CAST(vehicle_prefix AS STRING) AS vehicle_prefix,\r\n",
+        "  observed_dates_count,\r\n",
+        "  first_observed_date,\r\n",
+        "  last_observed_date,\r\n",
+        "  observed_date_span_days,\r\n",
+        "  missing_dates_within_span_count,\r\n",
+        "  date_presence_ratio,\r\n",
+        "  total_observations_count,\r\n",
+        "  avg_observations_per_observed_date,\r\n",
+        "  max_consecutive_observed_dates,\r\n",
+        "  max_consecutive_missing_dates_within_span\r\n",
+        "FROM main.gold.gold_vehicle_multi_day_continuity\r\n",
+        "WHERE (\r\n",
+        "    :p_vehicle_prefix = 'ALL'\r\n",
+        "    OR CAST(vehicle_prefix AS STRING) = :p_vehicle_prefix\r\n",
+        "  )\r\n",
+        "ORDER BY observed_date_span_days DESC, date_presence_ratio ASC, vehicle_prefix ASC\r\n",
+        "LIMIT 500\r\n"
+      ],
+      "parameters": [
+        {
+          "displayName": "Vehicle Prefix",
+          "keyword": "p_vehicle_prefix",
+          "dataType": "STRING",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": [
+                {
+                  "value": "ALL"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "e15f26g7",
+      "displayName": "vehicle_multi_day_detail",
+      "queryLines": [
+        "SELECT\r\n",
+        "  CAST(vehicle_prefix AS STRING) AS vehicle_prefix,\r\n",
+        "  observed_dates_count,\r\n",
+        "  first_observed_date,\r\n",
+        "  last_observed_date,\r\n",
+        "  observed_date_span_days,\r\n",
+        "  missing_dates_within_span_count,\r\n",
+        "  date_presence_ratio,\r\n",
+        "  first_captured_at_local,\r\n",
+        "  last_captured_at_local,\r\n",
+        "  total_observations_count,\r\n",
+        "  avg_observations_per_observed_date,\r\n",
+        "  max_consecutive_observed_dates,\r\n",
+        "  max_consecutive_missing_dates_within_span,\r\n",
+        "  record_created_at\r\n",
+        "FROM main.gold.gold_vehicle_multi_day_continuity\r\n",
+        "WHERE (\r\n",
+        "    :p_vehicle_prefix = 'ALL'\r\n",
+        "    OR CAST(vehicle_prefix AS STRING) = :p_vehicle_prefix\r\n",
+        "  )\r\n",
+        "ORDER BY date_presence_ratio ASC, missing_dates_within_span_count DESC, vehicle_prefix ASC\r\n",
+        "LIMIT 500\r\n"
+      ],
+      "parameters": [
+        {
+          "displayName": "Vehicle Prefix",
+          "keyword": "p_vehicle_prefix",
+          "dataType": "STRING",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": [
+                {
+                  "value": "ALL"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "f26g37h8",
+      "displayName": "vehicle_prefix_options",
+      "queryLines": [
+        "SELECT\r\n",
+        "  vehicle_prefix\r\n",
+        "FROM (\r\n",
+        "  SELECT 'ALL' AS vehicle_prefix, 0 AS sort_order\r\n",
+        "  UNION ALL\r\n",
+        "  SELECT DISTINCT CAST(vehicle_prefix AS STRING) AS vehicle_prefix, 1 AS sort_order\r\n",
+        "  FROM main.gold.gold_vehicle_multi_day_continuity\r\n",
+        "  WHERE vehicle_prefix IS NOT NULL\r\n",
+        ") options\r\n",
+        "ORDER BY sort_order, vehicle_prefix\r\n"
+      ]
+    }
+  ],
+  "pages": [
+    {
+      "name": "g37h48i9",
+      "displayName": "Executive Overview",
+      "layout": [
+        {
+          "widget": {
+            "name": "vehicles-count",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "a71b82c3",
+                  "fields": [
+                    {
+                      "name": "latest_refresh_at",
+                      "expression": "`latest_refresh_at`"
+                    },
+                    {
+                      "name": "vehicles_count",
+                      "expression": "`vehicles_count`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "showDescription": true,
+                "title": "Vehicles Count",
+                "description": "Number of vehicles represented in the vehicle multi-day continuity output."
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "vehicles_count"
+                },
+                "period": {
+                  "fieldName": "latest_refresh_at"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 3,
+            "height": 4
+          }
+        },
+        {
+          "widget": {
+            "name": "avg-observed-dates-count",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "a71b82c3",
+                  "fields": [
+                    {
+                      "name": "latest_refresh_at",
+                      "expression": "`latest_refresh_at`"
+                    },
+                    {
+                      "name": "avg_observed_dates_count",
+                      "expression": "`avg_observed_dates_count`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "showDescription": true,
+                "title": "Avg Observed Dates Count",
+                "description": "Average number of dates on which vehicles were observed."
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "avg_observed_dates_count"
+                },
+                "period": {
+                  "fieldName": "latest_refresh_at"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 3,
+            "y": 0,
+            "width": 3,
+            "height": 4
+          }
+        },
+        {
+          "widget": {
+            "name": "avg-date-presence-ratio",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "a71b82c3",
+                  "fields": [
+                    {
+                      "name": "latest_refresh_at",
+                      "expression": "`latest_refresh_at`"
+                    },
+                    {
+                      "name": "avg_date_presence_ratio",
+                      "expression": "`avg_date_presence_ratio`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "showDescription": true,
+                "title": "Avg Date Presence Ratio",
+                "description": "Average proportion of observed dates relative to each vehicle's full observed date span."
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "avg_date_presence_ratio"
+                },
+                "period": {
+                  "fieldName": "latest_refresh_at"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 0,
+            "width": 3,
+            "height": 4
+          }
+        },
+        {
+          "widget": {
+            "name": "avg-missing-dates-within-span-count",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "a71b82c3",
+                  "fields": [
+                    {
+                      "name": "latest_refresh_at",
+                      "expression": "`latest_refresh_at`"
+                    },
+                    {
+                      "name": "avg_missing_dates_within_span_count",
+                      "expression": "`avg_missing_dates_within_span_count`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "showDescription": true,
+                "title": "Avg Missing Dates Within Span",
+                "description": "Average number of missing dates inside each vehicle's observed date span."
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "avg_missing_dates_within_span_count"
+                },
+                "period": {
+                  "fieldName": "latest_refresh_at"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 9,
+            "y": 0,
+            "width": 3,
+            "height": 4
+          }
+        },
+        {
+          "widget": {
+            "name": "most-fragmented-multi-day-vehicles",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "b82c93d4",
+                  "fields": [
+                    {
+                      "name": "vehicle_prefix",
+                      "expression": "`vehicle_prefix`"
+                    },
+                    {
+                      "name": "date_presence_ratio",
+                      "expression": "`date_presence_ratio`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Most Fragmented Vehicles by Date Presence Ratio"
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "vehicle_prefix",
+                  "axis": {
+                    "title": "Vehicle Prefix"
+                  },
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "date_presence_ratio",
+                  "axis": {
+                    "title": "Date Presence Ratio"
+                  },
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 4,
+            "width": 12,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "most-consistent-multi-day-vehicles",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "c93d04e5",
+                  "fields": [
+                    {
+                      "name": "vehicle_prefix",
+                      "expression": "`vehicle_prefix`"
+                    },
+                    {
+                      "name": "date_presence_ratio",
+                      "expression": "`date_presence_ratio`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Most Consistent Vehicles by Date Presence Ratio"
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "vehicle_prefix",
+                  "axis": {
+                    "title": "Vehicle Prefix"
+                  },
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "date_presence_ratio",
+                  "axis": {
+                    "title": "Date Presence Ratio"
+                  },
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 10,
+            "width": 12,
+            "height": 6
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layoutVersion": "GRID_V1"
+    },
+    {
+      "name": "h48i59j0",
+      "displayName": "Span and Detail",
+      "layout": [
+        {
+          "widget": {
+            "name": "span-vs-presence-scatter",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "d04e15f6",
+                  "fields": [
+                    {
+                      "name": "observed_date_span_days",
+                      "expression": "`observed_date_span_days`"
+                    },
+                    {
+                      "name": "date_presence_ratio",
+                      "expression": "`date_presence_ratio`"
+                    },
+                    {
+                      "name": "total_observations_count",
+                      "expression": "`total_observations_count`"
+                    },
+                    {
+                      "name": "missing_dates_within_span_count",
+                      "expression": "`missing_dates_within_span_count`"
+                    },
+                    {
+                      "name": "vehicle_prefix",
+                      "expression": "`vehicle_prefix`"
+                    },
+                    {
+                      "name": "max_consecutive_missing_dates_within_span",
+                      "expression": "`max_consecutive_missing_dates_within_span`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Span vs Date Presence"
+              },
+              "widgetType": "scatter",
+              "encodings": {
+                "x": {
+                  "fieldName": "observed_date_span_days",
+                  "axis": {
+                    "title": "Observed Date Span (Days)"
+                  },
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "y": {
+                  "fieldName": "date_presence_ratio",
+                  "axis": {
+                    "title": "Date Presence Ratio"
+                  },
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "size": {
+                  "fieldName": "total_observations_count",
+                  "legend": {
+                    "title": "Total Observations Count"
+                  }
+                },
+                "color": {
+                  "fieldName": "missing_dates_within_span_count",
+                  "legend": {
+                    "title": "Missing Dates Within Span"
+                  },
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "label": {
+                  "fieldName": "vehicle_prefix"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 12,
+            "height": 7
+          }
+        },
+        {
+          "widget": {
+            "name": "vehicle-multi-day-detail-table",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "e15f26g7",
+                  "fields": [
+                    {
+                      "name": "vehicle_prefix",
+                      "expression": "`vehicle_prefix`"
+                    },
+                    {
+                      "name": "observed_dates_count",
+                      "expression": "`observed_dates_count`"
+                    },
+                    {
+                      "name": "first_observed_date",
+                      "expression": "`first_observed_date`"
+                    },
+                    {
+                      "name": "last_observed_date",
+                      "expression": "`last_observed_date`"
+                    },
+                    {
+                      "name": "observed_date_span_days",
+                      "expression": "`observed_date_span_days`"
+                    },
+                    {
+                      "name": "missing_dates_within_span_count",
+                      "expression": "`missing_dates_within_span_count`"
+                    },
+                    {
+                      "name": "date_presence_ratio",
+                      "expression": "`date_presence_ratio`"
+                    },
+                    {
+                      "name": "first_captured_at_local",
+                      "expression": "`first_captured_at_local`"
+                    },
+                    {
+                      "name": "last_captured_at_local",
+                      "expression": "`last_captured_at_local`"
+                    },
+                    {
+                      "name": "total_observations_count",
+                      "expression": "`total_observations_count`"
+                    },
+                    {
+                      "name": "avg_observations_per_observed_date",
+                      "expression": "`avg_observations_per_observed_date`"
+                    },
+                    {
+                      "name": "max_consecutive_observed_dates",
+                      "expression": "`max_consecutive_observed_dates`"
+                    },
+                    {
+                      "name": "max_consecutive_missing_dates_within_span",
+                      "expression": "`max_consecutive_missing_dates_within_span`"
+                    }
+                  ],
+                  "disaggregated": true,
+                  "orders": [
+                    {
+                      "direction": "ASC",
+                      "expression": "`date_presence_ratio`"
+                    },
+                    {
+                      "direction": "DESC",
+                      "expression": "`missing_dates_within_span_count`"
+                    },
+                    {
+                      "direction": "ASC",
+                      "expression": "`vehicle_prefix`"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "vehicle_prefix",
+                    "displayName": "Vehicle Prefix"
+                  },
+                  {
+                    "fieldName": "observed_dates_count",
+                    "displayName": "Observed Dates Count"
+                  },
+                  {
+                    "fieldName": "first_observed_date",
+                    "displayName": "First Observed Date"
+                  },
+                  {
+                    "fieldName": "last_observed_date",
+                    "displayName": "Last Observed Date"
+                  },
+                  {
+                    "fieldName": "observed_date_span_days",
+                    "displayName": "Observed Date Span (Days)"
+                  },
+                  {
+                    "fieldName": "missing_dates_within_span_count",
+                    "displayName": "Missing Dates Within Span"
+                  },
+                  {
+                    "fieldName": "date_presence_ratio",
+                    "displayName": "Date Presence Ratio"
+                  },
+                  {
+                    "fieldName": "first_captured_at_local",
+                    "displayName": "First Captured At Local"
+                  },
+                  {
+                    "fieldName": "last_captured_at_local",
+                    "displayName": "Last Captured At Local"
+                  },
+                  {
+                    "fieldName": "total_observations_count",
+                    "displayName": "Total Observations Count"
+                  },
+                  {
+                    "fieldName": "avg_observations_per_observed_date",
+                    "displayName": "Avg Observations Per Observed Date"
+                  },
+                  {
+                    "fieldName": "max_consecutive_observed_dates",
+                    "displayName": "Max Consecutive Observed Dates"
+                  },
+                  {
+                    "fieldName": "max_consecutive_missing_dates_within_span",
+                    "displayName": "Max Consecutive Missing Dates Within Span"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 7,
+            "width": 12,
+            "height": 7
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layoutVersion": "GRID_V1"
+    },
+    {
+      "name": "i59j60k1",
+      "displayName": "Global Filters",
+      "layout": [
+        {
+          "widget": {
+            "name": "vehicle-prefix",
+            "queries": [
+              {
+                "name": "dashboards/vehicle_multi_day_continuity_explorer/datasets/vehicle_prefix_options_vehicle_prefix",
+                "query": {
+                  "datasetName": "f26g37h8",
+                  "fields": [
+                    {
+                      "name": "vehicle_prefix",
+                      "expression": "`vehicle_prefix`"
+                    },
+                    {
+                      "name": "vehicle_prefix_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "parameter_dashboards/vehicle_multi_day_continuity_explorer/datasets/vehicle_multi_day_summary_p_vehicle_prefix",
+                "query": {
+                  "datasetName": "a71b82c3",
+                  "parameters": [
+                    {
+                      "name": "p_vehicle_prefix",
+                      "keyword": "p_vehicle_prefix"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "parameter_dashboards/vehicle_multi_day_continuity_explorer/datasets/most_fragmented_multi_day_vehicles_p_vehicle_prefix",
+                "query": {
+                  "datasetName": "b82c93d4",
+                  "parameters": [
+                    {
+                      "name": "p_vehicle_prefix",
+                      "keyword": "p_vehicle_prefix"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "parameter_dashboards/vehicle_multi_day_continuity_explorer/datasets/most_consistent_multi_day_vehicles_p_vehicle_prefix",
+                "query": {
+                  "datasetName": "c93d04e5",
+                  "parameters": [
+                    {
+                      "name": "p_vehicle_prefix",
+                      "keyword": "p_vehicle_prefix"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "parameter_dashboards/vehicle_multi_day_continuity_explorer/datasets/span_vs_presence_scatter_p_vehicle_prefix",
+                "query": {
+                  "datasetName": "d04e15f6",
+                  "parameters": [
+                    {
+                      "name": "p_vehicle_prefix",
+                      "keyword": "p_vehicle_prefix"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "parameter_dashboards/vehicle_multi_day_continuity_explorer/datasets/vehicle_multi_day_detail_p_vehicle_prefix",
+                "query": {
+                  "datasetName": "e15f26g7",
+                  "parameters": [
+                    {
+                      "name": "p_vehicle_prefix",
+                      "keyword": "p_vehicle_prefix"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Vehicle Prefix"
+              },
+              "widgetType": "filter-single-select",
+              "encodings": {
+                "fields": [
+                  {
+                    "fieldName": "vehicle_prefix",
+                    "queryName": "dashboards/vehicle_multi_day_continuity_explorer/datasets/vehicle_prefix_options_vehicle_prefix"
+                  },
+                  {
+                    "parameterName": "p_vehicle_prefix",
+                    "queryName": "parameter_dashboards/vehicle_multi_day_continuity_explorer/datasets/vehicle_multi_day_summary_p_vehicle_prefix"
+                  },
+                  {
+                    "parameterName": "p_vehicle_prefix",
+                    "queryName": "parameter_dashboards/vehicle_multi_day_continuity_explorer/datasets/most_fragmented_multi_day_vehicles_p_vehicle_prefix"
+                  },
+                  {
+                    "parameterName": "p_vehicle_prefix",
+                    "queryName": "parameter_dashboards/vehicle_multi_day_continuity_explorer/datasets/most_consistent_multi_day_vehicles_p_vehicle_prefix"
+                  },
+                  {
+                    "parameterName": "p_vehicle_prefix",
+                    "queryName": "parameter_dashboards/vehicle_multi_day_continuity_explorer/datasets/span_vs_presence_scatter_p_vehicle_prefix"
+                  },
+                  {
+                    "parameterName": "p_vehicle_prefix",
+                    "queryName": "parameter_dashboards/vehicle_multi_day_continuity_explorer/datasets/vehicle_multi_day_detail_p_vehicle_prefix"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 4,
+            "height": 1
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_GLOBAL_FILTERS",
+      "layoutVersion": "GRID_V1"
+    }
+  ],
+  "uiSettings": {
+    "theme": {
+      "widgetHeaderAlignment": "ALIGNMENT_UNSPECIFIED"
+    },
+    "applyModeEnabled": false
+  }
+}

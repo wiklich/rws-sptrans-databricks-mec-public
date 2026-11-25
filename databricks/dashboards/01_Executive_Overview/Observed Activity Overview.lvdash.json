@@ -1,0 +1,872 @@
+{
+  "datasets": [
+    {
+      "name": "d1a7c3e4",
+      "displayName": "daily_summary_selected_date",
+      "queryLines": [
+        "SELECT\r\n",
+        "  analysis_date,\r\n",
+        "  observed_position_records_count,\r\n",
+        "  distinct_observed_vehicles_count,\r\n",
+        "  distinct_observed_lines_count,\r\n",
+        "  distinct_observed_hours_count,\r\n",
+        "  distinct_observed_minutes_count,\r\n",
+        "  min_captured_at_local,\r\n",
+        "  max_captured_at_local\r\n",
+        "FROM main.gold.gold_observed_daily_activity\r\n",
+        "WHERE analysis_date = :p_analysis_date"
+      ],
+      "parameters": [
+        {
+          "displayName": "p_analysis_date",
+          "keyword": "p_analysis_date",
+          "dataType": "DATE",
+          "defaultSelection": {
+            "values": {
+              "dataType": "DATE",
+              "values": [
+                {
+                  "value": "2026-03-18T00:00:00.000"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "e5b9f1a2",
+      "displayName": "daily_trend",
+      "queryLines": [
+        "SELECT\r\n",
+        "  analysis_date,\r\n",
+        "  observed_position_records_count,\r\n",
+        "  distinct_observed_vehicles_count,\r\n",
+        "  distinct_observed_lines_count,\r\n",
+        "  distinct_observed_hours_count,\r\n",
+        "  distinct_observed_minutes_count\r\n",
+        "FROM main.gold.gold_observed_daily_activity\r\n",
+        "ORDER BY analysis_date"
+      ]
+    },
+    {
+      "name": "f6c2d8b7",
+      "displayName": "hourly_activity_selected_date",
+      "queryLines": [
+        "SELECT\r\n",
+        "  analysis_date,\r\n",
+        "  analysis_hour_local,\r\n",
+        "  observed_position_records_count,\r\n",
+        "  distinct_observed_vehicles_count,\r\n",
+        "  distinct_observed_lines_count,\r\n",
+        "  distinct_minutes_with_data,\r\n",
+        "  min_captured_at_local,\r\n",
+        "  max_captured_at_local\r\n",
+        "FROM main.gold.gold_observed_intraday_hourly_activity\r\n",
+        "WHERE analysis_date = :p_analysis_date\r\n",
+        "ORDER BY analysis_hour_local"
+      ],
+      "parameters": [
+        {
+          "displayName": "p_analysis_date",
+          "keyword": "p_analysis_date",
+          "dataType": "DATE",
+          "defaultSelection": {
+            "values": {
+              "dataType": "DATE",
+              "values": [
+                {
+                  "value": "2026-03-18T00:00:00.000"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "pages": [
+    {
+      "name": "a1f84d29",
+      "displayName": "Observed Activity Overview",
+      "layout": [
+        {
+          "widget": {
+            "name": "observed-position-records",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "d1a7c3e4",
+                  "fields": [
+                    {
+                      "name": "analysis_date",
+                      "expression": "`analysis_date`"
+                    },
+                    {
+                      "name": "observed_position_records_count",
+                      "expression": "`observed_position_records_count`"
+                    }
+                  ],
+                  "disaggregated": true,
+                  "orders": [
+                    {
+                      "direction": "DESC",
+                      "expression": "`analysis_date`"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Observed Position Records",
+                "headerAlignment": "center"
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "observed_position_records_count"
+                },
+                "period": {
+                  "fieldName": "analysis_date"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 2,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "distinct-observed-vehicles",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "d1a7c3e4",
+                  "fields": [
+                    {
+                      "name": "analysis_date",
+                      "expression": "`analysis_date`"
+                    },
+                    {
+                      "name": "distinct_observed_vehicles_count",
+                      "expression": "`distinct_observed_vehicles_count`"
+                    }
+                  ],
+                  "disaggregated": true,
+                  "orders": [
+                    {
+                      "direction": "DESC",
+                      "expression": "`analysis_date`"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Distinct Observed Vehicles",
+                "headerAlignment": "center"
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "distinct_observed_vehicles_count"
+                },
+                "period": {
+                  "fieldName": "analysis_date"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 2,
+            "y": 0,
+            "width": 2,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "distinct-observed-lines",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "d1a7c3e4",
+                  "fields": [
+                    {
+                      "name": "analysis_date",
+                      "expression": "`analysis_date`"
+                    },
+                    {
+                      "name": "distinct_observed_lines_count",
+                      "expression": "`distinct_observed_lines_count`"
+                    }
+                  ],
+                  "disaggregated": true,
+                  "orders": [
+                    {
+                      "direction": "DESC",
+                      "expression": "`analysis_date`"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Distinct Observed Lines",
+                "headerAlignment": "center"
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "distinct_observed_lines_count"
+                },
+                "period": {
+                  "fieldName": "analysis_date"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 4,
+            "y": 0,
+            "width": 2,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "distinct-observed-hours",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "d1a7c3e4",
+                  "fields": [
+                    {
+                      "name": "analysis_date",
+                      "expression": "`analysis_date`"
+                    },
+                    {
+                      "name": "distinct_observed_hours_count",
+                      "expression": "`distinct_observed_hours_count`"
+                    }
+                  ],
+                  "disaggregated": true,
+                  "orders": [
+                    {
+                      "direction": "DESC",
+                      "expression": "`analysis_date`"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Distinct Observed Hours",
+                "headerAlignment": "center"
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "distinct_observed_hours_count"
+                },
+                "period": {
+                  "fieldName": "analysis_date"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 0,
+            "width": 3,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "distinct-observed-minutes",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "d1a7c3e4",
+                  "fields": [
+                    {
+                      "name": "analysis_date",
+                      "expression": "`analysis_date`"
+                    },
+                    {
+                      "name": "distinct_observed_minutes_count",
+                      "expression": "`distinct_observed_minutes_count`"
+                    }
+                  ],
+                  "disaggregated": true,
+                  "orders": [
+                    {
+                      "direction": "DESC",
+                      "expression": "`analysis_date`"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Distinct Observed Minutes",
+                "headerAlignment": "center"
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "distinct_observed_minutes_count"
+                },
+                "period": {
+                  "fieldName": "analysis_date"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 9,
+            "y": 0,
+            "width": 3,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "daily-observed-position-trend",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "e5b9f1a2",
+                  "fields": [
+                    {
+                      "name": "analysis_date",
+                      "expression": "`analysis_date`"
+                    },
+                    {
+                      "name": "observed_position_records_count",
+                      "expression": "`observed_position_records_count`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Daily Observed Position Trend"
+              },
+              "widgetType": "line",
+              "encodings": {
+                "x": {
+                  "fieldName": "analysis_date",
+                  "axis": {
+                    "title": "Analysis Date"
+                  },
+                  "scale": {
+                    "type": "temporal"
+                  }
+                },
+                "y": {
+                  "fieldName": "observed_position_records_count",
+                  "axis": {
+                    "title": "Observed Position Records"
+                  },
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 2,
+            "width": 6,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "daily-observed-vehicles-trend",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "e5b9f1a2",
+                  "fields": [
+                    {
+                      "name": "analysis_date",
+                      "expression": "`analysis_date`"
+                    },
+                    {
+                      "name": "distinct_observed_vehicles_count",
+                      "expression": "`distinct_observed_vehicles_count`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Daily Observed Vehicles Trend"
+              },
+              "widgetType": "line",
+              "encodings": {
+                "x": {
+                  "fieldName": "analysis_date",
+                  "axis": {
+                    "title": "Analysis Date"
+                  },
+                  "scale": {
+                    "type": "temporal"
+                  }
+                },
+                "y": {
+                  "fieldName": "distinct_observed_vehicles_count",
+                  "axis": {
+                    "title": "Distinct Observed Vehicles"
+                  },
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 2,
+            "width": 6,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "hourly-observed-position-records",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "f6c2d8b7",
+                  "fields": [
+                    {
+                      "name": "analysis_hour_local",
+                      "expression": "`analysis_hour_local`"
+                    },
+                    {
+                      "name": "observed_position_records_count",
+                      "expression": "`observed_position_records_count`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Hourly Observed Position Records"
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "analysis_hour_local",
+                  "axis": {
+                    "title": "Local Hour"
+                  },
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "y": {
+                  "fieldName": "observed_position_records_count",
+                  "axis": {
+                    "title": "Observed Position Records"
+                  },
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 8,
+            "width": 3,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "hourly-distinct-observed-vehicles",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "f6c2d8b7",
+                  "fields": [
+                    {
+                      "name": "analysis_hour_local",
+                      "expression": "`analysis_hour_local`"
+                    },
+                    {
+                      "name": "distinct_observed_vehicles_count",
+                      "expression": "`distinct_observed_vehicles_count`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Hourly Distinct Observed Vehicles"
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "analysis_hour_local",
+                  "axis": {
+                    "title": "Local Hour"
+                  },
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "y": {
+                  "fieldName": "distinct_observed_vehicles_count",
+                  "axis": {
+                    "title": "Distinct Observed Vehicles"
+                  },
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 3,
+            "y": 8,
+            "width": 3,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "hourly-distinct-observed-lines",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "f6c2d8b7",
+                  "fields": [
+                    {
+                      "name": "analysis_hour_local",
+                      "expression": "`analysis_hour_local`"
+                    },
+                    {
+                      "name": "distinct_observed_lines_count",
+                      "expression": "`distinct_observed_lines_count`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Hourly Distinct Observed Lines"
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "analysis_hour_local",
+                  "axis": {
+                    "title": "Local Hour"
+                  },
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "y": {
+                  "fieldName": "distinct_observed_lines_count",
+                  "axis": {
+                    "title": "Distinct Observed Lines"
+                  },
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 8,
+            "width": 3,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "hourly-minute-support",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "f6c2d8b7",
+                  "fields": [
+                    {
+                      "name": "analysis_hour_local",
+                      "expression": "`analysis_hour_local`"
+                    },
+                    {
+                      "name": "distinct_minutes_with_data",
+                      "expression": "`distinct_minutes_with_data`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Hourly Minute Support"
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "analysis_hour_local",
+                  "axis": {
+                    "title": "Local Hour"
+                  },
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "y": {
+                  "fieldName": "distinct_minutes_with_data",
+                  "axis": {
+                    "title": "Distinct Minutes with Data"
+                  },
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 9,
+            "y": 8,
+            "width": 3,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "hourly-activity-detail",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "f6c2d8b7",
+                  "fields": [
+                    {
+                      "name": "analysis_hour_local",
+                      "expression": "`analysis_hour_local`"
+                    },
+                    {
+                      "name": "observed_position_records_count",
+                      "expression": "`observed_position_records_count`"
+                    },
+                    {
+                      "name": "distinct_observed_vehicles_count",
+                      "expression": "`distinct_observed_vehicles_count`"
+                    },
+                    {
+                      "name": "distinct_observed_lines_count",
+                      "expression": "`distinct_observed_lines_count`"
+                    },
+                    {
+                      "name": "distinct_minutes_with_data",
+                      "expression": "`distinct_minutes_with_data`"
+                    },
+                    {
+                      "name": "min_captured_at_local",
+                      "expression": "`min_captured_at_local`"
+                    },
+                    {
+                      "name": "max_captured_at_local",
+                      "expression": "`max_captured_at_local`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "analysis_hour_local",
+                    "displayName": "Analysis Hour Local"
+                  },
+                  {
+                    "fieldName": "observed_position_records_count",
+                    "displayName": "Observed Position Records"
+                  },
+                  {
+                    "fieldName": "distinct_observed_vehicles_count",
+                    "displayName": "Distinct Observed Vehicles"
+                  },
+                  {
+                    "fieldName": "distinct_observed_lines_count",
+                    "displayName": "Distinct Observed Lines"
+                  },
+                  {
+                    "fieldName": "distinct_minutes_with_data",
+                    "displayName": "Distinct Minutes with Data"
+                  },
+                  {
+                    "fieldName": "min_captured_at_local",
+                    "displayName": "Min Captured at Local"
+                  },
+                  {
+                    "fieldName": "max_captured_at_local",
+                    "displayName": "Max Captured at Local"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 14,
+            "width": 12,
+            "height": 6
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layoutVersion": "GRID_V1"
+    },
+    {
+      "name": "b2c41f90",
+      "displayName": "Global Filters",
+      "layout": [
+        {
+          "widget": {
+            "name": "analysis-date",
+            "queries": [
+              {
+                "name": "parameter_dashboards/observed_activity/datasets/daily_summary_selected_date_p_analysis_date",
+                "query": {
+                  "datasetName": "d1a7c3e4",
+                  "parameters": [
+                    {
+                      "name": "p_analysis_date",
+                      "keyword": "p_analysis_date"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "parameter_dashboards/observed_activity/datasets/hourly_activity_selected_date_p_analysis_date",
+                "query": {
+                  "datasetName": "f6c2d8b7",
+                  "parameters": [
+                    {
+                      "name": "p_analysis_date",
+                      "keyword": "p_analysis_date"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "showDescription": false,
+                "description": "",
+                "title": "Analysis Date"
+              },
+              "widgetType": "filter-date-picker",
+              "encodings": {
+                "fields": [
+                  {
+                    "parameterName": "p_analysis_date",
+                    "queryName": "parameter_dashboards/observed_activity/datasets/daily_summary_selected_date_p_analysis_date"
+                  },
+                  {
+                    "parameterName": "p_analysis_date",
+                    "queryName": "parameter_dashboards/observed_activity/datasets/hourly_activity_selected_date_p_analysis_date"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 1,
+            "height": 2
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_GLOBAL_FILTERS",
+      "layoutVersion": "GRID_V1"
+    }
+  ],
+  "uiSettings": {
+    "theme": {
+      "widgetHeaderAlignment": "ALIGNMENT_UNSPECIFIED"
+    },
+    "applyModeEnabled": false
+  }
+}

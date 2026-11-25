@@ -1,0 +1,1464 @@
+{
+  "datasets": [
+    {
+      "name": "1a2b3c4d",
+      "displayName": "line_options",
+      "queryLines": [
+        "SELECT\r\n",
+        "  line_sign\r\n",
+        "FROM (\r\n",
+        "  SELECT 'ALL' AS line_sign, 0 AS sort_order\r\n",
+        "  UNION ALL\r\n",
+        "  SELECT DISTINCT line_sign AS line_sign, 1 AS sort_order\r\n",
+        "  FROM main.gold.gold_planned_vs_observed_service_adherence_hourly\r\n",
+        "  WHERE (\r\n",
+        "      :p_service_date_range.min IS NULL\r\n",
+        "      OR :p_service_date_range.max IS NULL\r\n",
+        "      OR service_date BETWEEN CAST(:p_service_date_range.min AS DATE)\r\n",
+        "                          AND CAST(:p_service_date_range.max AS DATE)\r\n",
+        "    )\r\n",
+        "    AND line_sign IS NOT NULL\r\n",
+        "    AND TRIM(line_sign) <> ''\r\n",
+        ") options\r\n",
+        "ORDER BY sort_order, line_sign\r\n"
+      ],
+      "parameters": [
+        {
+          "displayName": "Service Date Range",
+          "keyword": "p_service_date_range",
+          "dataType": "DATE",
+          "complexType": "RANGE",
+          "defaultSelection": {
+            "range": {
+              "dataType": "DATE"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2b3c4d5e",
+      "displayName": "direction_options",
+      "queryLines": [
+        "SELECT\r\n",
+        "  gtfs_direction_id\r\n",
+        "FROM (\r\n",
+        "  SELECT 'ALL' AS gtfs_direction_id, 0 AS sort_order\r\n",
+        "  UNION ALL\r\n",
+        "  SELECT DISTINCT CAST(gtfs_direction_id AS STRING) AS gtfs_direction_id, 1 AS sort_order\r\n",
+        "  FROM main.gold.gold_planned_vs_observed_service_adherence_hourly\r\n",
+        "  WHERE gtfs_direction_id IS NOT NULL\r\n",
+        ") options\r\n",
+        "ORDER BY sort_order, gtfs_direction_id\r\n"
+      ]
+    },
+    {
+      "name": "3c4d5e6f",
+      "displayName": "hour_options",
+      "queryLines": [
+        "SELECT\r\n",
+        "  hour\r\n",
+        "FROM (\r\n",
+        "  SELECT 'ALL' AS hour, 0 AS sort_order\r\n",
+        "  UNION ALL\r\n",
+        "  SELECT DISTINCT CAST(hour AS STRING) AS hour, 1 AS sort_order\r\n",
+        "  FROM main.gold.gold_planned_vs_observed_service_adherence_hourly\r\n",
+        "  WHERE hour IS NOT NULL\r\n",
+        ") options\r\n",
+        "ORDER BY sort_order, hour\r\n"
+      ]
+    },
+    {
+      "name": "4d5e6f70",
+      "displayName": "line_summary",
+      "queryLines": [
+        "SELECT\r\n",
+        "  MAX(service_date) AS latest_service_date,\r\n",
+        "  SUM(CASE WHEN planned_service_present_flag THEN 1 ELSE 0 END) AS planned_service_hours,\r\n",
+        "  SUM(CASE WHEN observed_service_present_flag THEN 1 ELSE 0 END) AS observed_service_hours,\r\n",
+        "  SUM(CASE WHEN missed_service_flag THEN 1 ELSE 0 END) AS missed_service_windows,\r\n",
+        "  AVG(planned_headway_minutes) AS avg_planned_headway_minutes,\r\n",
+        "  AVG(observed_headway_avg_minutes) AS avg_observed_headway_avg_minutes,\r\n",
+        "  AVG(headway_deviation_minutes) AS avg_headway_deviation_minutes\r\n",
+        "FROM main.gold.gold_planned_vs_observed_service_adherence_hourly\r\n",
+        "WHERE (\r\n",
+        "    :p_line_sign = 'ALL'\r\n",
+        "    OR line_sign = :p_line_sign\r\n",
+        "  )\r\n",
+        "  AND (\r\n",
+        "    :p_gtfs_direction_id = 'ALL'\r\n",
+        "    OR CAST(gtfs_direction_id AS STRING) = :p_gtfs_direction_id\r\n",
+        "  )\r\n",
+        "  AND (\r\n",
+        "    :p_service_date_range.min IS NULL\r\n",
+        "    OR :p_service_date_range.max IS NULL\r\n",
+        "    OR service_date BETWEEN CAST(:p_service_date_range.min AS DATE)\r\n",
+        "                        AND CAST(:p_service_date_range.max AS DATE)\r\n",
+        "  )\r\n"
+      ],
+      "parameters": [
+        {
+          "displayName": "Line Sign",
+          "keyword": "p_line_sign",
+          "dataType": "STRING",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": [
+                {
+                  "value": "ALL"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "displayName": "GTFS Direction",
+          "keyword": "p_gtfs_direction_id",
+          "dataType": "STRING",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": [
+                {
+                  "value": "ALL"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "displayName": "Service Date Range",
+          "keyword": "p_service_date_range",
+          "dataType": "DATE",
+          "complexType": "RANGE",
+          "defaultSelection": {
+            "range": {
+              "dataType": "DATE"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5e6f7081",
+      "displayName": "line_hourly_profile",
+      "queryLines": [
+        "SELECT\r\n",
+        "  hour,\r\n",
+        "  AVG(planned_headway_minutes) AS avg_planned_headway_minutes,\r\n",
+        "  AVG(observed_headway_avg_minutes) AS avg_observed_headway_avg_minutes,\r\n",
+        "  AVG(headway_deviation_minutes) AS avg_headway_deviation_minutes,\r\n",
+        "  AVG(headway_deviation_pct) AS avg_headway_deviation_pct,\r\n",
+        "  SUM(CASE WHEN planned_service_present_flag THEN 1 ELSE 0 END) AS planned_service_hours,\r\n",
+        "  SUM(CASE WHEN observed_service_present_flag THEN 1 ELSE 0 END) AS observed_service_hours,\r\n",
+        "  SUM(CASE WHEN missed_service_flag THEN 1 ELSE 0 END) AS missed_service_windows\r\n",
+        "FROM main.gold.gold_planned_vs_observed_service_adherence_hourly\r\n",
+        "WHERE (\r\n",
+        "    :p_line_sign = 'ALL'\r\n",
+        "    OR line_sign = :p_line_sign\r\n",
+        "  )\r\n",
+        "  AND (\r\n",
+        "    :p_gtfs_direction_id = 'ALL'\r\n",
+        "    OR CAST(gtfs_direction_id AS STRING) = :p_gtfs_direction_id\r\n",
+        "  )\r\n",
+        "  AND (\r\n",
+        "    :p_service_date_range.min IS NULL\r\n",
+        "    OR :p_service_date_range.max IS NULL\r\n",
+        "    OR service_date BETWEEN CAST(:p_service_date_range.min AS DATE)\r\n",
+        "                        AND CAST(:p_service_date_range.max AS DATE)\r\n",
+        "  )\r\n",
+        "GROUP BY hour\r\n",
+        "ORDER BY hour ASC\r\n"
+      ],
+      "parameters": [
+        {
+          "displayName": "Line Sign",
+          "keyword": "p_line_sign",
+          "dataType": "STRING",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": [
+                {
+                  "value": "ALL"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "displayName": "GTFS Direction",
+          "keyword": "p_gtfs_direction_id",
+          "dataType": "STRING",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": [
+                {
+                  "value": "ALL"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "displayName": "Service Date Range",
+          "keyword": "p_service_date_range",
+          "dataType": "DATE",
+          "complexType": "RANGE",
+          "defaultSelection": {
+            "range": {
+              "dataType": "DATE"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "6f708192",
+      "displayName": "line_map_points",
+      "queryLines": [
+        "SELECT\r\n",
+        "  service_date,\r\n",
+        "  captured_at_local,\r\n",
+        "  hour,\r\n",
+        "  line_sign,\r\n",
+        "  gtfs_direction_id,\r\n",
+        "  observed_direction,\r\n",
+        "  direction_description,\r\n",
+        "  CAST(vehicle_prefix AS STRING) AS vehicle_prefix,\r\n",
+        "  latitude,\r\n",
+        "  longitude,\r\n",
+        "  planned_headway_minutes,\r\n",
+        "  observed_headway_avg_minutes,\r\n",
+        "  headway_deviation_minutes,\r\n",
+        "  headway_deviation_pct,\r\n",
+        "  missed_service_flag,\r\n",
+        "  adherence_band\r\n",
+        "FROM main.gold.gold_line_explorer_map_points\r\n",
+        "WHERE (\r\n",
+        "    :p_line_sign = 'ALL'\r\n",
+        "    OR line_sign = :p_line_sign\r\n",
+        "  )\r\n",
+        "  AND (\r\n",
+        "    :p_gtfs_direction_id = 'ALL'\r\n",
+        "    OR CAST(gtfs_direction_id AS STRING) = :p_gtfs_direction_id\r\n",
+        "  )\r\n",
+        "  AND (\r\n",
+        "    :p_hour = 'ALL'\r\n",
+        "    OR CAST(hour AS STRING) = :p_hour\r\n",
+        "  )\r\n",
+        "  AND (\r\n",
+        "    :p_service_date_range.min IS NULL\r\n",
+        "    OR :p_service_date_range.max IS NULL\r\n",
+        "    OR service_date BETWEEN CAST(:p_service_date_range.min AS DATE)\r\n",
+        "                        AND CAST(:p_service_date_range.max AS DATE)\r\n",
+        "  )\r\n",
+        "ORDER BY captured_at_local ASC\r\n",
+        "LIMIT 5000\r\n"
+      ],
+      "parameters": [
+        {
+          "displayName": "Line Sign",
+          "keyword": "p_line_sign",
+          "dataType": "STRING",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": [
+                {
+                  "value": "ALL"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "displayName": "GTFS Direction",
+          "keyword": "p_gtfs_direction_id",
+          "dataType": "STRING",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": [
+                {
+                  "value": "ALL"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "displayName": "Hour",
+          "keyword": "p_hour",
+          "dataType": "STRING",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": [
+                {
+                  "value": "ALL"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "displayName": "Service Date Range",
+          "keyword": "p_service_date_range",
+          "dataType": "DATE",
+          "complexType": "RANGE",
+          "defaultSelection": {
+            "range": {
+              "dataType": "DATE"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "708192a3",
+      "displayName": "line_hourly_detail",
+      "queryLines": [
+        "SELECT\r\n",
+        "  service_date,\r\n",
+        "  line_sign,\r\n",
+        "  gtfs_direction_id,\r\n",
+        "  hour,\r\n",
+        "  planned_headway_minutes,\r\n",
+        "  observed_event_count_proxy,\r\n",
+        "  observed_vehicle_count,\r\n",
+        "  observed_headway_avg_minutes,\r\n",
+        "  observed_headway_p50_minutes,\r\n",
+        "  observed_headway_p90_minutes,\r\n",
+        "  headway_deviation_minutes,\r\n",
+        "  headway_deviation_pct,\r\n",
+        "  planned_service_present_flag,\r\n",
+        "  observed_service_present_flag,\r\n",
+        "  missed_service_flag\r\n",
+        "FROM main.gold.gold_planned_vs_observed_service_adherence_hourly\r\n",
+        "WHERE (\r\n",
+        "    :p_line_sign = 'ALL'\r\n",
+        "    OR line_sign = :p_line_sign\r\n",
+        "  )\r\n",
+        "  AND (\r\n",
+        "    :p_gtfs_direction_id = 'ALL'\r\n",
+        "    OR CAST(gtfs_direction_id AS STRING) = :p_gtfs_direction_id\r\n",
+        "  )\r\n",
+        "  AND (\r\n",
+        "    :p_hour = 'ALL'\r\n",
+        "    OR CAST(hour AS STRING) = :p_hour\r\n",
+        "  )\r\n",
+        "  AND (\r\n",
+        "    :p_service_date_range.min IS NULL\r\n",
+        "    OR :p_service_date_range.max IS NULL\r\n",
+        "    OR service_date BETWEEN CAST(:p_service_date_range.min AS DATE)\r\n",
+        "                        AND CAST(:p_service_date_range.max AS DATE)\r\n",
+        "  )\r\n",
+        "ORDER BY service_date DESC, hour ASC\r\n",
+        "LIMIT 500\r\n"
+      ],
+      "parameters": [
+        {
+          "displayName": "Line Sign",
+          "keyword": "p_line_sign",
+          "dataType": "STRING",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": [
+                {
+                  "value": "ALL"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "displayName": "GTFS Direction",
+          "keyword": "p_gtfs_direction_id",
+          "dataType": "STRING",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": [
+                {
+                  "value": "ALL"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "displayName": "Hour",
+          "keyword": "p_hour",
+          "dataType": "STRING",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": [
+                {
+                  "value": "ALL"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "displayName": "Service Date Range",
+          "keyword": "p_service_date_range",
+          "dataType": "DATE",
+          "complexType": "RANGE",
+          "defaultSelection": {
+            "range": {
+              "dataType": "DATE"
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "pages": [
+    {
+      "name": "8192a3b4",
+      "displayName": "Line Explorer Map",
+      "layout": [
+        {
+          "widget": {
+            "name": "planned-service-hours",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "4d5e6f70",
+                  "fields": [
+                    {
+                      "name": "latest_service_date",
+                      "expression": "`latest_service_date`"
+                    },
+                    {
+                      "name": "planned_service_hours",
+                      "expression": "`planned_service_hours`"
+                    }
+                  ],
+                  "disaggregated": true,
+                  "orders": [
+                    {
+                      "direction": "DESC",
+                      "expression": "`latest_service_date`"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Planned Service Hours",
+                "headerAlignment": "center"
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "planned_service_hours"
+                },
+                "period": {
+                  "fieldName": "latest_service_date"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 3,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "observed-service-hours",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "4d5e6f70",
+                  "fields": [
+                    {
+                      "name": "latest_service_date",
+                      "expression": "`latest_service_date`"
+                    },
+                    {
+                      "name": "observed_service_hours",
+                      "expression": "`observed_service_hours`"
+                    }
+                  ],
+                  "disaggregated": true,
+                  "orders": [
+                    {
+                      "direction": "DESC",
+                      "expression": "`latest_service_date`"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Observed Service Hours",
+                "headerAlignment": "center"
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "observed_service_hours"
+                },
+                "period": {
+                  "fieldName": "latest_service_date"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 3,
+            "y": 0,
+            "width": 3,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "missed-service-windows",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "4d5e6f70",
+                  "fields": [
+                    {
+                      "name": "latest_service_date",
+                      "expression": "`latest_service_date`"
+                    },
+                    {
+                      "name": "missed_service_windows",
+                      "expression": "`missed_service_windows`"
+                    }
+                  ],
+                  "disaggregated": true,
+                  "orders": [
+                    {
+                      "direction": "DESC",
+                      "expression": "`latest_service_date`"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Missed Service Windows",
+                "headerAlignment": "center"
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "missed_service_windows"
+                },
+                "period": {
+                  "fieldName": "latest_service_date"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 0,
+            "width": 3,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "avg-headway-deviation",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "4d5e6f70",
+                  "fields": [
+                    {
+                      "name": "latest_service_date",
+                      "expression": "`latest_service_date`"
+                    },
+                    {
+                      "name": "avg_headway_deviation_minutes",
+                      "expression": "`avg_headway_deviation_minutes`"
+                    }
+                  ],
+                  "disaggregated": true,
+                  "orders": [
+                    {
+                      "direction": "DESC",
+                      "expression": "`latest_service_date`"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Avg Headway Deviation (Min)",
+                "headerAlignment": "center"
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "avg_headway_deviation_minutes"
+                },
+                "period": {
+                  "fieldName": "latest_service_date"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 9,
+            "y": 0,
+            "width": 3,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "line-hourly-headway-deviation",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "5e6f7081",
+                  "fields": [
+                    {
+                      "name": "hour",
+                      "expression": "`hour`"
+                    },
+                    {
+                      "name": "avg_headway_deviation_minutes",
+                      "expression": "`avg_headway_deviation_minutes`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Avg Headway Deviation by Hour"
+              },
+              "widgetType": "line",
+              "encodings": {
+                "x": {
+                  "fieldName": "hour",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "y": {
+                  "fieldName": "avg_headway_deviation_minutes",
+                  "axis": {
+                    "title": "Avg Headway Deviation (Min)"
+                  },
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 2,
+            "width": 12,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "line-explorer-map",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "6f708192",
+                  "fields": [
+                    {
+                      "name": "adherence_band",
+                      "expression": "`adherence_band`"
+                    },
+                    {
+                      "name": "latitude",
+                      "expression": "`latitude`"
+                    },
+                    {
+                      "name": "longitude",
+                      "expression": "`longitude`"
+                    },
+                    {
+                      "name": "service_date",
+                      "expression": "`service_date`"
+                    },
+                    {
+                      "name": "captured_at_local",
+                      "expression": "`captured_at_local`"
+                    },
+                    {
+                      "name": "hour",
+                      "expression": "`hour`"
+                    },
+                    {
+                      "name": "line_sign",
+                      "expression": "`line_sign`"
+                    },
+                    {
+                      "name": "gtfs_direction_id",
+                      "expression": "`gtfs_direction_id`"
+                    },
+                    {
+                      "name": "direction_description",
+                      "expression": "`direction_description`"
+                    },
+                    {
+                      "name": "vehicle_prefix",
+                      "expression": "`vehicle_prefix`"
+                    },
+                    {
+                      "name": "planned_headway_minutes",
+                      "expression": "`planned_headway_minutes`"
+                    },
+                    {
+                      "name": "observed_headway_avg_minutes",
+                      "expression": "`observed_headway_avg_minutes`"
+                    },
+                    {
+                      "name": "headway_deviation_minutes",
+                      "expression": "`headway_deviation_minutes`"
+                    },
+                    {
+                      "name": "headway_deviation_pct",
+                      "expression": "`headway_deviation_pct`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "symbol-map",
+              "encodings": {
+                "coordinates": {
+                  "latitude": {
+                    "fieldName": "latitude"
+                  },
+                  "longitude": {
+                    "fieldName": "longitude"
+                  }
+                },
+                "color": {
+                  "fieldName": "adherence_band",
+                  "legend": {
+                    "title": "Adherence Band"
+                  },
+                  "scale": {
+                    "type": "categorical",
+                    "mappings": [
+                      {
+                        "value": "High Deviation",
+                        "color": {
+                          "themeColorType": "visualizationColors",
+                          "position": 0
+                        }
+                      },
+                      {
+                        "value": "Moderate Deviation",
+                        "color": {
+                          "themeColorType": "visualizationColors",
+                          "position": 4
+                        }
+                      },
+                      {
+                        "value": "Low Deviation",
+                        "color": {
+                          "themeColorType": "visualizationColors",
+                          "position": 2
+                        }
+                      },
+                      {
+                        "value": "Aligned or Better",
+                        "color": {
+                          "themeColorType": "visualizationColors",
+                          "position": 7
+                        }
+                      },
+                      {
+                        "value": "No Gold Match",
+                        "color": {
+                          "themeColorType": "visualizationColors",
+                          "position": 5
+                        }
+                      }
+                    ]
+                  }
+                },
+                "extra": [
+                  {
+                    "fieldName": "service_date"
+                  },
+                  {
+                    "fieldName": "captured_at_local"
+                  },
+                  {
+                    "fieldName": "hour"
+                  },
+                  {
+                    "fieldName": "line_sign"
+                  },
+                  {
+                    "fieldName": "gtfs_direction_id"
+                  },
+                  {
+                    "fieldName": "direction_description"
+                  },
+                  {
+                    "fieldName": "vehicle_prefix"
+                  },
+                  {
+                    "fieldName": "planned_headway_minutes"
+                  },
+                  {
+                    "fieldName": "observed_headway_avg_minutes"
+                  },
+                  {
+                    "fieldName": "headway_deviation_minutes"
+                  },
+                  {
+                    "fieldName": "headway_deviation_pct"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 8,
+            "width": 12,
+            "height": 10
+          }
+        },
+        {
+          "widget": {
+            "name": "line-hourly-detail-table",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "708192a3",
+                  "fields": [
+                    {
+                      "name": "service_date",
+                      "expression": "`service_date`"
+                    },
+                    {
+                      "name": "line_sign",
+                      "expression": "`line_sign`"
+                    },
+                    {
+                      "name": "gtfs_direction_id",
+                      "expression": "`gtfs_direction_id`"
+                    },
+                    {
+                      "name": "hour",
+                      "expression": "`hour`"
+                    },
+                    {
+                      "name": "planned_headway_minutes",
+                      "expression": "`planned_headway_minutes`"
+                    },
+                    {
+                      "name": "observed_event_count_proxy",
+                      "expression": "`observed_event_count_proxy`"
+                    },
+                    {
+                      "name": "observed_vehicle_count",
+                      "expression": "`observed_vehicle_count`"
+                    },
+                    {
+                      "name": "observed_headway_avg_minutes",
+                      "expression": "`observed_headway_avg_minutes`"
+                    },
+                    {
+                      "name": "observed_headway_p50_minutes",
+                      "expression": "`observed_headway_p50_minutes`"
+                    },
+                    {
+                      "name": "observed_headway_p90_minutes",
+                      "expression": "`observed_headway_p90_minutes`"
+                    },
+                    {
+                      "name": "headway_deviation_minutes",
+                      "expression": "`headway_deviation_minutes`"
+                    },
+                    {
+                      "name": "headway_deviation_pct",
+                      "expression": "`headway_deviation_pct`"
+                    },
+                    {
+                      "name": "planned_service_present_flag",
+                      "expression": "`planned_service_present_flag`"
+                    },
+                    {
+                      "name": "observed_service_present_flag",
+                      "expression": "`observed_service_present_flag`"
+                    },
+                    {
+                      "name": "missed_service_flag",
+                      "expression": "`missed_service_flag`"
+                    }
+                  ],
+                  "disaggregated": true,
+                  "orders": [
+                    {
+                      "direction": "DESC",
+                      "expression": "`service_date`"
+                    },
+                    {
+                      "direction": "ASC",
+                      "expression": "`hour`"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "service_date",
+                    "displayName": "Service Date"
+                  },
+                  {
+                    "fieldName": "line_sign",
+                    "displayName": "Line Sign"
+                  },
+                  {
+                    "fieldName": "gtfs_direction_id",
+                    "displayName": "GTFS Direction"
+                  },
+                  {
+                    "fieldName": "hour",
+                    "displayName": "Hour"
+                  },
+                  {
+                    "fieldName": "planned_headway_minutes",
+                    "displayName": "Planned Headway (Min)"
+                  },
+                  {
+                    "fieldName": "observed_event_count_proxy",
+                    "displayName": "Observed Event Count Proxy"
+                  },
+                  {
+                    "fieldName": "observed_vehicle_count",
+                    "displayName": "Observed Vehicle Count"
+                  },
+                  {
+                    "fieldName": "observed_headway_avg_minutes",
+                    "displayName": "Observed Headway Avg (Min)"
+                  },
+                  {
+                    "fieldName": "observed_headway_p50_minutes",
+                    "displayName": "Observed Headway P50 (Min)"
+                  },
+                  {
+                    "fieldName": "observed_headway_p90_minutes",
+                    "displayName": "Observed Headway P90 (Min)"
+                  },
+                  {
+                    "fieldName": "headway_deviation_minutes",
+                    "displayName": "Headway Deviation (Min)"
+                  },
+                  {
+                    "fieldName": "headway_deviation_pct",
+                    "displayName": "Headway Deviation (%)"
+                  },
+                  {
+                    "fieldName": "planned_service_present_flag",
+                    "displayName": "Planned Service Present"
+                  },
+                  {
+                    "fieldName": "observed_service_present_flag",
+                    "displayName": "Observed Service Present"
+                  },
+                  {
+                    "fieldName": "missed_service_flag",
+                    "displayName": "Missed Service Flag"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 18,
+            "width": 12,
+            "height": 8
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layoutVersion": "GRID_V1"
+    },
+    {
+      "name": "92a3b4c5",
+      "displayName": "Global Filters",
+      "layout": [
+        {
+          "widget": {
+            "name": "service-date-range",
+            "queries": [
+              {
+                "name": "parameter_dashboards/line_explorer_map/datasets/line_options_p_service_date_range",
+                "query": {
+                  "datasetName": "1a2b3c4d",
+                  "parameters": [
+                    {
+                      "name": "p_service_date_range",
+                      "keyword": "p_service_date_range"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "parameter_dashboards/line_explorer_map/datasets/line_summary_p_service_date_range",
+                "query": {
+                  "datasetName": "4d5e6f70",
+                  "parameters": [
+                    {
+                      "name": "p_service_date_range",
+                      "keyword": "p_service_date_range"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "parameter_dashboards/line_explorer_map/datasets/line_hourly_profile_p_service_date_range",
+                "query": {
+                  "datasetName": "5e6f7081",
+                  "parameters": [
+                    {
+                      "name": "p_service_date_range",
+                      "keyword": "p_service_date_range"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "parameter_dashboards/line_explorer_map/datasets/line_map_points_p_service_date_range",
+                "query": {
+                  "datasetName": "6f708192",
+                  "parameters": [
+                    {
+                      "name": "p_service_date_range",
+                      "keyword": "p_service_date_range"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "parameter_dashboards/line_explorer_map/datasets/line_hourly_detail_p_service_date_range",
+                "query": {
+                  "datasetName": "708192a3",
+                  "parameters": [
+                    {
+                      "name": "p_service_date_range",
+                      "keyword": "p_service_date_range"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Service Date Range"
+              },
+              "widgetType": "filter-date-range-picker",
+              "encodings": {
+                "fields": [
+                  {
+                    "parameterName": "p_service_date_range",
+                    "queryName": "parameter_dashboards/line_explorer_map/datasets/line_options_p_service_date_range"
+                  },
+                  {
+                    "parameterName": "p_service_date_range",
+                    "queryName": "parameter_dashboards/line_explorer_map/datasets/line_summary_p_service_date_range"
+                  },
+                  {
+                    "parameterName": "p_service_date_range",
+                    "queryName": "parameter_dashboards/line_explorer_map/datasets/line_hourly_profile_p_service_date_range"
+                  },
+                  {
+                    "parameterName": "p_service_date_range",
+                    "queryName": "parameter_dashboards/line_explorer_map/datasets/line_map_points_p_service_date_range"
+                  },
+                  {
+                    "parameterName": "p_service_date_range",
+                    "queryName": "parameter_dashboards/line_explorer_map/datasets/line_hourly_detail_p_service_date_range"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 1,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "gtfs-direction-id",
+            "queries": [
+              {
+                "name": "dashboards/line_explorer_map/datasets/direction_options_gtfs_direction_id",
+                "query": {
+                  "datasetName": "2b3c4d5e",
+                  "fields": [
+                    {
+                      "name": "gtfs_direction_id",
+                      "expression": "`gtfs_direction_id`"
+                    },
+                    {
+                      "name": "gtfs_direction_id_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "parameter_dashboards/line_explorer_map/datasets/line_summary_p_gtfs_direction_id",
+                "query": {
+                  "datasetName": "4d5e6f70",
+                  "parameters": [
+                    {
+                      "name": "p_gtfs_direction_id",
+                      "keyword": "p_gtfs_direction_id"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "parameter_dashboards/line_explorer_map/datasets/line_hourly_profile_p_gtfs_direction_id",
+                "query": {
+                  "datasetName": "5e6f7081",
+                  "parameters": [
+                    {
+                      "name": "p_gtfs_direction_id",
+                      "keyword": "p_gtfs_direction_id"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "parameter_dashboards/line_explorer_map/datasets/line_map_points_p_gtfs_direction_id",
+                "query": {
+                  "datasetName": "6f708192",
+                  "parameters": [
+                    {
+                      "name": "p_gtfs_direction_id",
+                      "keyword": "p_gtfs_direction_id"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "parameter_dashboards/line_explorer_map/datasets/line_hourly_detail_p_gtfs_direction_id",
+                "query": {
+                  "datasetName": "708192a3",
+                  "parameters": [
+                    {
+                      "name": "p_gtfs_direction_id",
+                      "keyword": "p_gtfs_direction_id"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "GTFS Direction"
+              },
+              "widgetType": "filter-single-select",
+              "encodings": {
+                "fields": [
+                  {
+                    "fieldName": "gtfs_direction_id",
+                    "queryName": "dashboards/line_explorer_map/datasets/direction_options_gtfs_direction_id"
+                  },
+                  {
+                    "parameterName": "p_gtfs_direction_id",
+                    "queryName": "parameter_dashboards/line_explorer_map/datasets/line_summary_p_gtfs_direction_id"
+                  },
+                  {
+                    "parameterName": "p_gtfs_direction_id",
+                    "queryName": "parameter_dashboards/line_explorer_map/datasets/line_hourly_profile_p_gtfs_direction_id"
+                  },
+                  {
+                    "parameterName": "p_gtfs_direction_id",
+                    "queryName": "parameter_dashboards/line_explorer_map/datasets/line_map_points_p_gtfs_direction_id"
+                  },
+                  {
+                    "parameterName": "p_gtfs_direction_id",
+                    "queryName": "parameter_dashboards/line_explorer_map/datasets/line_hourly_detail_p_gtfs_direction_id"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 2,
+            "width": 1,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "line-sign",
+            "queries": [
+              {
+                "name": "dashboards/line_explorer_map/datasets/line_options_line_sign",
+                "query": {
+                  "datasetName": "1a2b3c4d",
+                  "fields": [
+                    {
+                      "name": "line_sign",
+                      "expression": "`line_sign`"
+                    },
+                    {
+                      "name": "line_sign_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "parameter_dashboards/line_explorer_map/datasets/line_summary_p_line_sign",
+                "query": {
+                  "datasetName": "4d5e6f70",
+                  "parameters": [
+                    {
+                      "name": "p_line_sign",
+                      "keyword": "p_line_sign"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "parameter_dashboards/line_explorer_map/datasets/line_hourly_profile_p_line_sign",
+                "query": {
+                  "datasetName": "5e6f7081",
+                  "parameters": [
+                    {
+                      "name": "p_line_sign",
+                      "keyword": "p_line_sign"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "parameter_dashboards/line_explorer_map/datasets/line_map_points_p_line_sign",
+                "query": {
+                  "datasetName": "6f708192",
+                  "parameters": [
+                    {
+                      "name": "p_line_sign",
+                      "keyword": "p_line_sign"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "parameter_dashboards/line_explorer_map/datasets/line_hourly_detail_p_line_sign",
+                "query": {
+                  "datasetName": "708192a3",
+                  "parameters": [
+                    {
+                      "name": "p_line_sign",
+                      "keyword": "p_line_sign"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Line Sign"
+              },
+              "widgetType": "filter-single-select",
+              "encodings": {
+                "fields": [
+                  {
+                    "fieldName": "line_sign",
+                    "queryName": "dashboards/line_explorer_map/datasets/line_options_line_sign"
+                  },
+                  {
+                    "parameterName": "p_line_sign",
+                    "queryName": "parameter_dashboards/line_explorer_map/datasets/line_summary_p_line_sign"
+                  },
+                  {
+                    "parameterName": "p_line_sign",
+                    "queryName": "parameter_dashboards/line_explorer_map/datasets/line_hourly_profile_p_line_sign"
+                  },
+                  {
+                    "parameterName": "p_line_sign",
+                    "queryName": "parameter_dashboards/line_explorer_map/datasets/line_map_points_p_line_sign"
+                  },
+                  {
+                    "parameterName": "p_line_sign",
+                    "queryName": "parameter_dashboards/line_explorer_map/datasets/line_hourly_detail_p_line_sign"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 4,
+            "width": 1,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "hour",
+            "queries": [
+              {
+                "name": "dashboards/line_explorer_map/datasets/hour_options_hour",
+                "query": {
+                  "datasetName": "3c4d5e6f",
+                  "fields": [
+                    {
+                      "name": "hour",
+                      "expression": "`hour`"
+                    },
+                    {
+                      "name": "hour_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "parameter_dashboards/line_explorer_map/datasets/line_map_points_p_hour",
+                "query": {
+                  "datasetName": "6f708192",
+                  "parameters": [
+                    {
+                      "name": "p_hour",
+                      "keyword": "p_hour"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "parameter_dashboards/line_explorer_map/datasets/line_hourly_detail_p_hour",
+                "query": {
+                  "datasetName": "708192a3",
+                  "parameters": [
+                    {
+                      "name": "p_hour",
+                      "keyword": "p_hour"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Hour"
+              },
+              "widgetType": "filter-single-select",
+              "encodings": {
+                "fields": [
+                  {
+                    "fieldName": "hour",
+                    "queryName": "dashboards/line_explorer_map/datasets/hour_options_hour"
+                  },
+                  {
+                    "parameterName": "p_hour",
+                    "queryName": "parameter_dashboards/line_explorer_map/datasets/line_map_points_p_hour"
+                  },
+                  {
+                    "parameterName": "p_hour",
+                    "queryName": "parameter_dashboards/line_explorer_map/datasets/line_hourly_detail_p_hour"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 6,
+            "width": 1,
+            "height": 2
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_GLOBAL_FILTERS",
+      "layoutVersion": "GRID_V1"
+    }
+  ],
+  "uiSettings": {
+    "theme": {
+      "widgetHeaderAlignment": "ALIGNMENT_UNSPECIFIED"
+    },
+    "applyModeEnabled": false
+  }
+}

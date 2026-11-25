@@ -1,0 +1,20 @@
+resources:
+  pipelines:
+    etl_pipeline_bronze_observed:
+      name: etl_pipeline_bronze_observed
+      catalog: ${var.catalog}
+      schema: ${var.bronze_schema}
+      development: true
+      continuous: false
+      channel: CURRENT
+      serverless: true
+
+      libraries:
+        - glob:
+            include: ../../../src/pipelines/bronze_observed/tables/**
+
+      tags:
+        domain: observed
+        layer: bronze
+        source: sptrans_position
+        component: etl_pipeline_bronze_observed

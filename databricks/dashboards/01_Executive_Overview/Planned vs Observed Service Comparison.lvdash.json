@@ -1,0 +1,791 @@
+{
+  "datasets": [
+    {
+      "name": "714ca238",
+      "displayName": "daily_summary",
+      "queryLines": [
+        "SELECT\r\n",
+        "  analysis_date,\r\n",
+        "  planned_lines_count,\r\n",
+        "  observed_lines_count,\r\n",
+        "  planned_lines_observed_count,\r\n",
+        "  planned_lines_not_observed_count,\r\n",
+        "  observed_lines_not_in_gtfs_count,\r\n",
+        "  planned_lines_observed_pct\r\n",
+        "FROM main.gold.gold_planned_vs_observed_daily\r\n",
+        "ORDER BY analysis_date DESC"
+      ]
+    },
+    {
+      "name": "aac58137",
+      "displayName": "line_status_detail",
+      "queryLines": [
+        "SELECT\r\n",
+        "  analysis_date,\r\n",
+        "  line_code,\r\n",
+        "  planned_route_id,\r\n",
+        "  observed_line_sign,\r\n",
+        "  match_status,\r\n",
+        "  observed_events_count,\r\n",
+        "  observed_vehicles_count\r\n",
+        "FROM main.gold.gold_planned_vs_observed_line_status\r\n",
+        "ORDER BY analysis_date DESC, line_code"
+      ]
+    }
+  ],
+  "pages": [
+    {
+      "name": "e2764714",
+      "displayName": "Main KPIs",
+      "layout": [
+        {
+          "widget": {
+            "name": "daily-summary",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "714ca238",
+                  "fields": [
+                    {
+                      "name": "daily(analysis_date)",
+                      "expression": "DATE_TRUNC(\"DAY\", `analysis_date`)"
+                    },
+                    {
+                      "name": "planned_lines_count",
+                      "expression": "`planned_lines_count`"
+                    }
+                  ],
+                  "disaggregated": true,
+                  "orders": [
+                    {
+                      "direction": "DESC",
+                      "expression": "DATE_TRUNC(\"DAY\", `analysis_date`)"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "showDescription": true,
+                "title": "Planned Lines Count",
+                "description": "Total number of distinct lines in the GTFS planned catalog for the comparison date."
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "planned_lines_count"
+                },
+                "period": {
+                  "fieldName": "daily(analysis_date)"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 4,
+            "height": 4
+          }
+        },
+        {
+          "widget": {
+            "name": "observed-lines-count",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "714ca238",
+                  "fields": [
+                    {
+                      "name": "daily(analysis_date)",
+                      "expression": "DATE_TRUNC(\"DAY\", `analysis_date`)"
+                    },
+                    {
+                      "name": "observed_lines_count",
+                      "expression": "`observed_lines_count`"
+                    }
+                  ],
+                  "disaggregated": true,
+                  "orders": [
+                    {
+                      "direction": "DESC",
+                      "expression": "DATE_TRUNC(\"DAY\", `analysis_date`)"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "showDescription": true,
+                "title": "Observed Lines Count",
+                "description": "Total number of distinct lines observed in the SPTrans operational dataset for the selected date."
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "observed_lines_count"
+                },
+                "period": {
+                  "fieldName": "daily(analysis_date)"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 4,
+            "y": 0,
+            "width": 4,
+            "height": 4
+          }
+        },
+        {
+          "widget": {
+            "name": "planned-lines-observed",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "714ca238",
+                  "fields": [
+                    {
+                      "name": "daily(analysis_date)",
+                      "expression": "DATE_TRUNC(\"DAY\", `analysis_date`)"
+                    },
+                    {
+                      "name": "planned_lines_observed_count",
+                      "expression": "`planned_lines_observed_count`"
+                    }
+                  ],
+                  "disaggregated": true,
+                  "orders": [
+                    {
+                      "direction": "DESC",
+                      "expression": "DATE_TRUNC(\"DAY\", `analysis_date`)"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "showDescription": true,
+                "title": "Planned Lines Observed",
+                "description": "Number of distinct lines that exist in the GTFS planned catalog and were also observed in the operational dataset."
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "planned_lines_observed_count"
+                },
+                "period": {
+                  "fieldName": "daily(analysis_date)"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 8,
+            "y": 0,
+            "width": 4,
+            "height": 4
+          }
+        },
+        {
+          "widget": {
+            "name": "planned-lines-not-observed",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "714ca238",
+                  "fields": [
+                    {
+                      "name": "daily(analysis_date)",
+                      "expression": "DATE_TRUNC(\"DAY\", `analysis_date`)"
+                    },
+                    {
+                      "name": "planned_lines_not_observed_count",
+                      "expression": "`planned_lines_not_observed_count`"
+                    }
+                  ],
+                  "disaggregated": true,
+                  "orders": [
+                    {
+                      "direction": "DESC",
+                      "expression": "DATE_TRUNC(\"DAY\", `analysis_date`)"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "showDescription": true,
+                "title": "Planned Lines Not Observed",
+                "description": "Number of distinct GTFS planned lines that were not observed in the operational dataset for the selected date."
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "planned_lines_not_observed_count"
+                },
+                "period": {
+                  "fieldName": "daily(analysis_date)"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 4,
+            "width": 4,
+            "height": 4
+          }
+        },
+        {
+          "widget": {
+            "name": "observed-lines-not-gtfs",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "714ca238",
+                  "fields": [
+                    {
+                      "name": "daily(analysis_date)",
+                      "expression": "DATE_TRUNC(\"DAY\", `analysis_date`)"
+                    },
+                    {
+                      "name": "observed_lines_not_in_gtfs_count",
+                      "expression": "`observed_lines_not_in_gtfs_count`"
+                    }
+                  ],
+                  "disaggregated": true,
+                  "orders": [
+                    {
+                      "direction": "DESC",
+                      "expression": "DATE_TRUNC(\"DAY\", `analysis_date`)"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "showDescription": true,
+                "title": "Observed Lines Not in GTFS",
+                "description": "Number of distinct observed lines that do not exist in the GTFS planned catalog for the selected date."
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "observed_lines_not_in_gtfs_count"
+                },
+                "period": {
+                  "fieldName": "daily(analysis_date)"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 4,
+            "y": 4,
+            "width": 4,
+            "height": 4
+          }
+        },
+        {
+          "widget": {
+            "name": "planned-lines-percent",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "714ca238",
+                  "fields": [
+                    {
+                      "name": "daily(analysis_date)",
+                      "expression": "DATE_TRUNC(\"DAY\", `analysis_date`)"
+                    },
+                    {
+                      "name": "planned_lines_observed_pct",
+                      "expression": "`planned_lines_observed_pct`"
+                    }
+                  ],
+                  "disaggregated": true,
+                  "orders": [
+                    {
+                      "direction": "DESC",
+                      "expression": "DATE_TRUNC(\"DAY\", `analysis_date`)"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "showDescription": true,
+                "title": "Planned Lines Observed (%)",
+                "description": "Number of distinct observed lines that do not exist in the GTFS planned catalog for the selected date."
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "planned_lines_observed_pct"
+                },
+                "period": {
+                  "fieldName": "daily(analysis_date)"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 8,
+            "y": 4,
+            "width": 4,
+            "height": 4
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layoutVersion": "GRID_V1"
+    },
+    {
+      "name": "dd276a69",
+      "displayName": "Coverage and Exception Trends",
+      "layout": [
+        {
+          "widget": {
+            "name": "planned-lines-observed-percent-over-time",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "714ca238",
+                  "fields": [
+                    {
+                      "name": "analysis_date",
+                      "expression": "`analysis_date`"
+                    },
+                    {
+                      "name": "planned_lines_observed_pct",
+                      "expression": "`planned_lines_observed_pct`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Planned Lines Observed (%) Over Time"
+              },
+              "widgetType": "line",
+              "encodings": {
+                "x": {
+                  "fieldName": "analysis_date",
+                  "axis": {
+                    "title": "Analysis Date"
+                  },
+                  "scale": {
+                    "type": "temporal"
+                  }
+                },
+                "y": {
+                  "fieldName": "planned_lines_observed_pct",
+                  "axis": {
+                    "title": "Planned Lines Observed in %"
+                  },
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "label": {
+                  "show": true
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 4,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "planned-lines-not-observed-by-date",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "714ca238",
+                  "fields": [
+                    {
+                      "name": "daily(analysis_date)",
+                      "expression": "DATE_TRUNC(\"DAY\", `analysis_date`)"
+                    },
+                    {
+                      "name": "planned_lines_not_observed_count",
+                      "expression": "`planned_lines_not_observed_count`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Planned Lines Not Observed by Date"
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "daily(analysis_date)",
+                  "axis": {
+                    "title": "Analysis Date"
+                  },
+                  "scale": {
+                    "type": "temporal"
+                  }
+                },
+                "y": {
+                  "fieldName": "planned_lines_not_observed_count",
+                  "axis": {
+                    "title": "Planned Lines Not Observed",
+                    "hideTitle": true
+                  },
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 4,
+            "y": 0,
+            "width": 4,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "observed-lines-not-in-gtfs-by-date",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "714ca238",
+                  "fields": [
+                    {
+                      "name": "daily(analysis_date)",
+                      "expression": "DATE_TRUNC(\"DAY\", `analysis_date`)"
+                    },
+                    {
+                      "name": "observed_lines_not_in_gtfs_count",
+                      "expression": "`observed_lines_not_in_gtfs_count`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Observed Lines Not in GTFS by Date"
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "daily(analysis_date)",
+                  "scale": {
+                    "type": "temporal"
+                  }
+                },
+                "y": {
+                  "fieldName": "observed_lines_not_in_gtfs_count",
+                  "axis": {
+                    "hideTitle": true
+                  },
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 8,
+            "y": 0,
+            "width": 4,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "analysis-date",
+            "queries": [
+              {
+                "name": "dashboards/01f124ed64211c0ea4ba9862dfb89039/datasets/01f124edb49610e4a2f313b01c4ee940_analysis_date",
+                "query": {
+                  "datasetName": "714ca238",
+                  "fields": [
+                    {
+                      "name": "analysis_date",
+                      "expression": "`analysis_date`"
+                    },
+                    {
+                      "name": "analysis_date_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Analysis Date"
+              },
+              "widgetType": "filter-single-select",
+              "encodings": {
+                "fields": [
+                  {
+                    "fieldName": "analysis_date",
+                    "queryName": "dashboards/01f124ed64211c0ea4ba9862dfb89039/datasets/01f124edb49610e4a2f313b01c4ee940_analysis_date"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 3,
+            "y": 6,
+            "width": 4,
+            "height": 1
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layoutVersion": "GRID_V1"
+    },
+    {
+      "name": "b6fc47be",
+      "displayName": "Detailed Line Status",
+      "layout": [
+        {
+          "widget": {
+            "name": "2d8c9c90",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "aac58137",
+                  "fields": [
+                    {
+                      "name": "analysis_date",
+                      "expression": "`analysis_date`"
+                    },
+                    {
+                      "name": "line_code",
+                      "expression": "`line_code`"
+                    },
+                    {
+                      "name": "planned_route_id",
+                      "expression": "`planned_route_id`"
+                    },
+                    {
+                      "name": "observed_line_sign",
+                      "expression": "`observed_line_sign`"
+                    },
+                    {
+                      "name": "match_status",
+                      "expression": "`match_status`"
+                    },
+                    {
+                      "name": "observed_events_count",
+                      "expression": "`observed_events_count`"
+                    },
+                    {
+                      "name": "observed_vehicles_count",
+                      "expression": "`observed_vehicles_count`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "analysis_date",
+                    "displayName": "Analysis Date"
+                  },
+                  {
+                    "fieldName": "line_code",
+                    "displayName": "Line Code"
+                  },
+                  {
+                    "fieldName": "planned_route_id",
+                    "displayName": "Planned Route Id"
+                  },
+                  {
+                    "fieldName": "observed_line_sign",
+                    "displayName": "Observed Line Sign"
+                  },
+                  {
+                    "fieldName": "match_status",
+                    "displayName": "Match Status"
+                  },
+                  {
+                    "fieldName": "observed_events_count",
+                    "displayName": "Observed Events Count"
+                  },
+                  {
+                    "fieldName": "observed_vehicles_count",
+                    "displayName": "Observed Vehiclees Count"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 1,
+            "width": 12,
+            "height": 10
+          }
+        },
+        {
+          "widget": {
+            "name": "analysis-date",
+            "queries": [
+              {
+                "name": "dashboards/01f124ed64211c0ea4ba9862dfb89039/datasets/01f124eefd1e1c30a666091f8afe78e4_analysis_date",
+                "query": {
+                  "datasetName": "aac58137",
+                  "fields": [
+                    {
+                      "name": "analysis_date",
+                      "expression": "`analysis_date`"
+                    },
+                    {
+                      "name": "analysis_date_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Analysis Date"
+              },
+              "widgetType": "filter-single-select",
+              "encodings": {
+                "fields": [
+                  {
+                    "fieldName": "analysis_date",
+                    "queryName": "dashboards/01f124ed64211c0ea4ba9862dfb89039/datasets/01f124eefd1e1c30a666091f8afe78e4_analysis_date"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 4,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "match-status",
+            "queries": [
+              {
+                "name": "dashboards/01f124ed64211c0ea4ba9862dfb89039/datasets/01f124eefd1e1c30a666091f8afe78e4_match_status",
+                "query": {
+                  "datasetName": "aac58137",
+                  "fields": [
+                    {
+                      "name": "match_status",
+                      "expression": "`match_status`"
+                    },
+                    {
+                      "name": "match_status_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Match Status"
+              },
+              "widgetType": "filter-single-select",
+              "encodings": {
+                "fields": [
+                  {
+                    "fieldName": "match_status",
+                    "queryName": "dashboards/01f124ed64211c0ea4ba9862dfb89039/datasets/01f124eefd1e1c30a666091f8afe78e4_match_status"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 4,
+            "y": 0,
+            "width": 4,
+            "height": 1
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layoutVersion": "GRID_V1"
+    }
+  ],
+  "uiSettings": {
+    "theme": {
+      "widgetHeaderAlignment": "ALIGNMENT_UNSPECIFIED"
+    },
+    "applyModeEnabled": false
+  }
+}
